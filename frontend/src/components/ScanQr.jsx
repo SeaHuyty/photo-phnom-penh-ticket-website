@@ -1,91 +1,132 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import axios from "axios";
 
 function ScanQr() {
   const [scanResult, setScanResult] = useState(null);
   const [verificationMessage, setVerificationMessage] = useState(null);
-  const [manualUserId, setManualUserId] = useState("");
+  const [isScanning, setIsScanning] = useState(true); // To control continuous scanning
 
   useEffect(() => {
-    const readerElement = document.getElementById("reader");
-    if (!readerElement) {
-      console.error("Scanner element not found!");
-      return;
-    }
-
     const scanner = new Html5QrcodeScanner("reader", {
-      qrbox: { width: 250, height: 250 },
-      fps: 5,
+      qrbox: 250, // Size of the scanning area
+      fps: 5, // Frames per second for scanning
     });
 
-    scanner.render(handleScanSuccess, handleScanError);
+    if (isScanning) {
+      // Render the scanner with success and error callbacks
+      scanner.render(handleScanSuccess, handleScanError);
+    } else {
+      scanner.clear(); // Stop scanning
+    }
 
     return () => {
       scanner.clear();
     };
-  }, []);
+  }, [isScanning]);
 
-  // ✅ Handle successful scan
+  // Handle successful scan
   function handleScanSuccess(result) {
-    console.log("Scanned QR Code:", result); // ✅ Debugging
-    setScanResult(result.trim());
-    sendToServer(result.trim());
+    setScanResult(result);
+    sendToServer(result); // Send to the server for verification
   }
 
-  // 🔴 Handle scan errors
+  // Handle scan errors
   function handleScanError(err) {
     console.warn("Scan error:", err);
   }
 
-  // ✅ Send scanned User ID to backend
-  async function sendToServer(userId) {
-    if (!userId) {
-      setVerificationMessage("Invalid QR Code");
-      return;
-    }
+  // Function to play sound feedback
+  function playBeep() {
+    const beep = new Audio("/beep.mp3"); // Ensure you have the sound file
+    beep.play();
+  }
 
-    console.log("Sending User ID to server:", userId); // ✅ Debugging
+  // Function to display error sound feedback
+  function playErrorBeep() {
+    const beep = new Audio("/errorNotBeep.mp3"); // Ensure you have the sound file
+    beep.play();
+  }
+  
+  // Send scanned User ID to backend
+  async function sendToServer(userId) {
     try {
       const response = await axios.post("http://localhost:3000/api/verify", { userId });
       setVerificationMessage(response.data.message);
+
+      if (response.data.message === "QR Code already used") {
+        // Handle used QR code logic if necessary
+        playErrorBeep();
+      } else {
+        playBeep(); // Play sound when verified
+      }
+
+      // Stop scanning after result is obtained
+      setIsScanning(false);
     } catch (error) {
-      console.error("API Error:", error.response?.data); // ✅ Debugging
       setVerificationMessage(error.response?.data?.message || "Verification failed");
+      setIsScanning(false); // Stop scanning on error
     }
   }
 
-  // ✅ Handle manual input
-  function handleManualInput(event) {
-    setManualUserId(event.target.value);
-  }
 
-  function handleManualSubmit() {
-    if (manualUserId) {
-      sendToServer(manualUserId);
-    }
+  // Function to reset scan and pop-up
+  function resetScan() {
+    setScanResult(null);
+    setVerificationMessage(null);
+    setIsScanning(true); // Restart the scanning process
   }
 
   return (
     <div>
       <h1>QR Code Scanner</h1>
-      <div id="reader"></div> {/* ✅ Ensure this element exists */}
 
-      {scanResult && <p>Scanned User ID: {scanResult}</p>}
-      
-      {verificationMessage && <p>{verificationMessage}</p>}
+      {/* Scanner container */}
+      <div
+        id="reader"
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "inline-block",
+        }}
+      ></div>
 
-      <div>
-        <p>Or enter the User ID manually:</p>
-        <input
-          type="text"
-          value={manualUserId}
-          onChange={handleManualInput}
-        />
-        <button onClick={handleManualSubmit}>Verify</button>
-      </div>
+      {/* Pop-up for status */}
+      {scanResult && (
+        <div style={styles.popup}>
+          <h2>Status: {verificationMessage || "Scanning..."}</h2>
+          <button onClick={resetScan} style={styles.button}>
+            Reset Scan
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+
+// Styles for the pop-up
+const styles = {
+  popup: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    backgroundColor: "white",
+    padding: "20px",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    zIndex: 1000,
+  },
+  button: {
+    padding: "10px 20px",
+    marginTop: "20px",
+    backgroundColor: "#007bff",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+  },
+};
 
 export default ScanQr;
