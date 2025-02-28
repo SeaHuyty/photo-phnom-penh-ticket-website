@@ -24,17 +24,37 @@ function CreateQr() {
   }
 
   function downloadQrCode() {
-    const canvas = qrRef.current.querySelector("canvas");
-    if (canvas) {
+    const qrCanvas = qrRef.current.querySelector("canvas");
+
+    if (qrCanvas) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const borderSize = 30; // White border size
+      const qrSize = qrCanvas.width; // Get QR code size
+      const newSize = qrSize + borderSize * 2; // New total size with border
+
+      // Create new canvas with extra space for the border
+      canvas.width = newSize;
+      canvas.height = newSize;
+
+      // Fill background with white (border)
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, newSize, newSize);
+
+      // Draw the QR code on top of the white background
+      ctx.drawImage(qrCanvas, borderSize, borderSize, qrSize, qrSize);
+
+      // Download the new QR code with the white border
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
-      link.download = "qrcode.png";
+      link.download = "qrcode_with_border.png";
       link.click();
     }
   }
 
   return (
-    <div>
+    <div style={{ textAlign: "center" }}>
       <h1>Create QR Code</h1>
       <form onSubmit={handleSubmit}>
         <input type="text" name="name" placeholder="Name" onChange={handleChange} required />
@@ -48,9 +68,16 @@ function CreateQr() {
       {userId && (
         <div>
           <h3>Your QR Code:</h3>
-          <div ref={qrRef}>
-            <QRCodeCanvas value={userId.toString()} size={200} />
+          <div ref={qrRef} style={{ padding: "20px", display: "inline-block", backgroundColor: "#ffffff" }}>
+            <QRCodeCanvas
+              value={userId.toString()}
+              size={250} // QR Code size
+              bgColor="#ffffff" // Ensures the QR code has a white background
+              fgColor="#000000" // Black foreground
+              level="H" // High error correction
+            />
           </div>
+          <br />
           <button onClick={downloadQrCode}>Download QR Code</button>
         </div>
       )}
@@ -58,4 +85,4 @@ function CreateQr() {
   );
 }
 
-export default CreateQr; 
+export default CreateQr;
