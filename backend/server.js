@@ -19,7 +19,7 @@ db.connect(err => {
     else console.log("✅ Connected to MySQL Database");
 });
 
-// ✅ Register User & Generate Unique ID (1-500)
+// ✅ Register User & Generate Unique ID (6 digits + eventId)
 app.post("/api/register", (req, res) => {
     const { name, email, phone, eventId } = req.body;
 
@@ -62,7 +62,8 @@ app.post("/api/register", (req, res) => {
                 }
 
                 const usedIds = results.map(row => row.id);
-                let availableIds = Array.from({ length: 500 }, (_, i) => i + 1).filter(id => !usedIds.includes(id));
+                let availableIds = Array.from({ length: 999999 }, (_, i) => i + 100000) // Generates 6-digit IDs
+                                          .filter(id => !usedIds.includes(id));
 
                 if (availableIds.length === 0) {
                     return res.status(400).json({ message: "No more IDs available" });
@@ -70,6 +71,7 @@ app.post("/api/register", (req, res) => {
 
                 // Select a random available ID
                 const userId = availableIds[Math.floor(Math.random() * availableIds.length)];
+                const qrCode = `${userId}-${eventId}`; // Format: 123456-1
 
                 // Reduce ticket count by 1 for the selected event
                 db.query("UPDATE event SET tickets = tickets - 1 WHERE id = ?", [eventId], (err) => {
@@ -80,14 +82,14 @@ app.post("/api/register", (req, res) => {
 
                     // Save user in DB
                     db.query(
-                        "INSERT INTO users (id, name, email, phone, used, eventId) VALUES (?, ?, ?, ?, ?, ?)", 
-                        [userId, name, email, phone, 0, eventId], 
+                        "INSERT INTO users (id, name, email, phone, used, eventId, qrCode) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                        [userId, name, email, phone, 0, eventId, qrCode], 
                         (err) => {
                             if (err) {
                                 console.error("Error saving user to database:", err);
                                 return res.status(500).json({ message: "Error saving user" });
                             }
-                            res.json({ userId });
+                            res.json({ qrCode }); // Send the generated QR code
                         }
                     );
                 });
@@ -98,32 +100,28 @@ app.post("/api/register", (req, res) => {
 
 // ✅ Verify QR Code (with event handling)
 app.post("/api/verify", (req, res) => {
-    let { userId } = req.body;
+    let { qrCode } = req.body;
 
-    if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+    if (!qrCode) {
+        return res.status(400).json({ message: "QR Code is required" });
     }
 
-    userId = userId.toString().trim();
-    userId = parseInt(userId, 10);
+    qrCode = qrCode.toString().trim();
 
-    if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid QR Code format" });
-    }
-
-    db.query("SELECT * FROM users WHERE id = ?", [userId], (err, result) => {
+    db.query("SELECT * FROM users WHERE qrCode = ?", [qrCode], (err, result) => {
         if (err) return res.status(500).send("Database error");
 
         if (result.length === 0) {
             return res.status(400).json({ message: "Invalid QR Code" });
         }
 
+        // Check if the QR code has already been used
         if (result[0].used) {
             return res.status(400).json({ message: "QR Code already used" });
         }
 
         // Mark QR code as used
-        db.query("UPDATE users SET used = 1 WHERE id = ?", [userId], (err) => {
+        db.query("UPDATE users SET used = 1 WHERE qrCode = ?", [qrCode], (err) => {
             if (err) return res.status(500).send("Error updating record");
             res.json({ message: "✅ QR Code verified successfully" });
         });
@@ -134,6 +132,17 @@ app.post("/api/verify", (req, res) => {
 app.get("/api/events", (req, res) => {
     db.query("SELECT * FROM event WHERE tickets > 0", (err, results) => {
         if (err) return res.status(500).send("Database error");
+        res.json(results);
+    });
+});
+
+// ✅ Get All Users
+app.get("/api/users", (req, res) => {
+    db.query("SELECT * FROM users", (err, results) => {
+        if (err) {
+            console.error("Database error when fetching users:", err);
+            return res.status(500).json({ message: "Database error" });
+        }
         res.json(results);
     });
 });
