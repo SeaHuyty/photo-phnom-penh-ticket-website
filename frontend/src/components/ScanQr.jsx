@@ -27,8 +27,9 @@ function ScanQr() {
 
   // Handle successful scan
   function handleScanSuccess(result) {
-    setScanResult(result);
-    sendToServer(result); // Send to the server for verification
+    const qrCode = result; // Assuming the QR code content itself is the result
+    setScanResult(qrCode);
+    sendToServer(qrCode); // Send QR code to the server for verification
   }
 
   // Handle scan errors
@@ -47,28 +48,27 @@ function ScanQr() {
     const beep = new Audio("/errorNotBeep.mp3"); // Ensure you have the sound file
     beep.play();
   }
-  
-  // Send scanned User ID to backend
-  async function sendToServer(userId) {
+
+  // In ScanQr.jsx, send the QR code content to the server instead of userId
+  async function sendToServer(qrCode) {
     try {
-      const response = await axios.post("http://localhost:3000/api/verify", { userId });
-      setVerificationMessage(response.data.message);
+        const response = await axios.post("http://localhost:3000/api/verify", { qrCode });
+        setVerificationMessage(response.data.message);
 
-      if (response.data.message === "QR Code already used") {
-        // Handle used QR code logic if necessary
-        playErrorBeep();
-      } else {
-        playBeep(); // Play sound when verified
-      }
+        if (response.data.message === "QR Code already used") {
+            // Handle used QR code logic if necessary
+            playErrorBeep();
+        } else {
+            playBeep(); // Play sound when verified
+        }
 
-      // Stop scanning after result is obtained
-      setIsScanning(false);
+        // Stop scanning after result is obtained
+        setIsScanning(false);
     } catch (error) {
-      setVerificationMessage(error.response?.data?.message || "Verification failed");
-      setIsScanning(false); // Stop scanning on error
+        setVerificationMessage(error.response?.data?.message || "Verification failed");
+        setIsScanning(false); // Stop scanning on error
     }
   }
-
 
   // Function to reset scan and pop-up
   function resetScan() {
