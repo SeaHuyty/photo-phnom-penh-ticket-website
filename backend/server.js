@@ -1,17 +1,26 @@
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 const app = express();
-app.use(cors());
+
+// CORS setup with credentials support
+app.use(cors({
+    origin: "http://localhost:5173", // Allow frontend domain
+    credentials: true
+}));
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ✅ Connect to MySQL Database
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "rootAdmin123",
-    database: "qrcode_db"
+    database: "qrcode_db",
 });
 
 db.connect(err => {
@@ -19,7 +28,10 @@ db.connect(err => {
     else console.log("✅ Connected to MySQL Database");
 });
 
-// ✅ Register User & Generate Unique ID (6 digits + eventId)
+// ✅ Secret Key for JWT
+const JWT_SECRET = process.env.JWT_SECRET || "yourSuperSecretKey";
+
+// ✅ Register User & Generate Unique ID
 app.post("/api/register", (req, res) => {
     const { name, email, phone, eventId } = req.body;
 
@@ -27,23 +39,15 @@ app.post("/api/register", (req, res) => {
         return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Check for duplicate email
     db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
-        if (err) {
-            console.error("Database error when checking email:", err);
-            return res.status(500).json({ message: "Database error" });
-        }
+        if (err) return res.status(500).json({ message: "Database error" });
 
         if (results.length > 0) {
             return res.status(400).json({ message: "Email is already registered" });
         }
 
-        // Check if tickets are available for the selected event
         db.query("SELECT tickets FROM event WHERE id = ?", [eventId], (err, eventResults) => {
-            if (err) {
-                console.error("Database error when checking event tickets:", err);
-                return res.status(500).json({ message: "Database error" });
-            }
+            if (err) return res.status(500).json({ message: "Database error" });
 
             if (eventResults.length === 0) {
                 return res.status(400).json({ message: "Event not found" });
@@ -54,42 +58,29 @@ app.post("/api/register", (req, res) => {
                 return res.status(400).json({ message: "No tickets available for this event" });
             }
 
-            // Fetch all used IDs
             db.query("SELECT id FROM users", (err, results) => {
-                if (err) {
-                    console.error("Database error when fetching used IDs:", err);
-                    return res.status(500).send("Database error");
-                }
+                if (err) return res.status(500).send("Database error");
 
                 const usedIds = results.map(row => row.id);
-                let availableIds = Array.from({ length: 999999 }, (_, i) => i + 100000) // Generates 6-digit IDs
-                                          .filter(id => !usedIds.includes(id));
+                let availableIds = Array.from({ length: 999999 }, (_, i) => i + 100000)
+                                        .filter(id => !usedIds.includes(id));
 
                 if (availableIds.length === 0) {
                     return res.status(400).json({ message: "No more IDs available" });
                 }
 
-                // Select a random available ID
                 const userId = availableIds[Math.floor(Math.random() * availableIds.length)];
-                const qrCode = `${userId}-${eventId}`; // Format: 123456-1
+                const qrCode = `${userId}-${eventId}`;
 
-                // Reduce ticket count by 1 for the selected event
                 db.query("UPDATE event SET tickets = tickets - 1 WHERE id = ?", [eventId], (err) => {
-                    if (err) {
-                        console.error("Database error when updating ticket count:", err);
-                        return res.status(500).json({ message: "Error updating ticket count" });
-                    }
+                    if (err) return res.status(500).json({ message: "Error updating ticket count" });
 
-                    // Save user in DB
                     db.query(
                         "INSERT INTO users (id, name, email, phone, used, eventId, qrCode) VALUES (?, ?, ?, ?, ?, ?, ?)", 
                         [userId, name, email, phone, 0, eventId, qrCode], 
                         (err) => {
-                            if (err) {
-                                console.error("Error saving user to database:", err);
-                                return res.status(500).json({ message: "Error saving user" });
-                            }
-                            res.json({ qrCode }); // Send the generated QR code
+                            if (err) return res.status(500).json({ message: "Error saving user" });
+                            res.json({ qrCode });
                         }
                     );
                 });
@@ -98,7 +89,7 @@ app.post("/api/register", (req, res) => {
     });
 });
 
-// ✅ Verify QR Code (with event handling)
+// ✅ Verify QR Code
 app.post("/api/verify", (req, res) => {
     let { qrCode } = req.body;
 
@@ -115,12 +106,10 @@ app.post("/api/verify", (req, res) => {
             return res.status(400).json({ message: "Invalid QR Code" });
         }
 
-        // Check if the QR code has already been used
         if (result[0].used) {
             return res.status(400).json({ message: "QR Code already used" });
         }
 
-        // Mark QR code as used
         db.query("UPDATE users SET used = 1 WHERE qrCode = ?", [qrCode], (err) => {
             if (err) return res.status(500).send("Error updating record");
             res.json({ message: "✅ QR Code verified successfully" });
@@ -128,7 +117,7 @@ app.post("/api/verify", (req, res) => {
     });
 });
 
-// ✅ Get Events (To check available events and tickets)
+// ✅ Get Events
 app.get("/api/events", (req, res) => {
     db.query("SELECT * FROM event WHERE tickets > 0", (err, results) => {
         if (err) return res.status(500).send("Database error");
@@ -139,12 +128,65 @@ app.get("/api/events", (req, res) => {
 // ✅ Get All Users
 app.get("/api/users", (req, res) => {
     db.query("SELECT * FROM users", (err, results) => {
-        if (err) {
-            console.error("Database error when fetching users:", err);
-            return res.status(500).json({ message: "Database error" });
-        }
+        if (err) return res.status(500).json({ message: "Database error" });
         res.json(results);
     });
+});
+
+// ✅ Admin Login (Using JWT)
+app.post("/api/admin/login", (req, res) => {
+    const { username, password } = req.body;
+
+    db.query("SELECT * FROM admins WHERE username = ?", [username], async (err, results) => {
+        if (err) return res.status(500).json({ message: "Database error" });
+
+        if (results.length === 0) {
+            return res.status(401).json({ message: "Admin not found" });
+        }
+
+        const admin = results[0];
+
+        // Compare plain text password
+        if (password !== admin.password) {
+            return res.status(401).json({ message: "Invalid password" });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ id: admin.id, role: "admin" }, JWT_SECRET, { expiresIn: "1h" });
+
+        res.json({ token });
+    });
+});
+
+// ✅ Middleware to Verify JWT
+const requireAdminAuth = (req, res, next) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+        return res.status(401).json({ message: "Unauthorized access" });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: "Invalid token" });
+        }
+        req.admin = decoded;
+        next();
+    });
+};
+
+// ✅ Protected Admin Routes
+app.get("/api/scan", requireAdminAuth, (req, res) => {
+    res.json({ message: "You have access to the Scan page" });
+});
+
+app.get("/api/send-email", requireAdminAuth, (req, res) => {
+    res.json({ message: "You have access to the Send Email page" });
+});
+
+// ✅ Admin Authentication Check
+app.get("/api/admin/check-auth", requireAdminAuth, (req, res) => {
+    res.json({ message: "Admin is authenticated" });
 });
 
 // ✅ Start Server

@@ -13,3 +13,9 @@ CREATE TABLE event (
     name VARCHAR(100) NOT NULL,
     tickets INT NOT NULL,
 );
+
+CREATE TABLE admins (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL
+);
