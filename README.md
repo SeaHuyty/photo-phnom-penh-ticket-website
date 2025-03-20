@@ -69,6 +69,12 @@ This project is a **new version** of a previous project that used Python and sto
    npm run dev
    ```
 
+## Libraries Used:
+
+1. Backend: dotenv, jsonwebtoken
+
+2. Frontend: axios, qrcode.react
+
 ## Usage
 
 1. **User Registration**: Fill out the form and select an event day.
