@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-
+import eventImage from "../assets/poster1.jpg";
 function CreateQr() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -22,14 +22,23 @@ function CreateQr() {
   }
 
   return (
-    <div style={{ textAlign: "center" }}>
+    <div className="createQr" >
+      <div className="img">
+        <img src={eventImage} alt="" />
+      </div>
       <h1>Create QR Code</h1>
-      <form onSubmit={handleSubmit}>
-        <input type="text" name="name" placeholder="Name" onChange={handleChange} required />
-        <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
-        <input type="tel" name="phone" placeholder="Phone" onChange={handleChange} required />
-        <button type="submit">Next</button>
-      </form>
+      <div className="form">
+        <form onSubmit={handleSubmit}>
+          {/* add label */}
+          <label htmlFor="">Name</label>
+          <input type="text" name="name" placeholder="Name" onChange={handleChange} required />
+          <label htmlFor="">Email</label>
+          <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
+          <label htmlFor="">Phone Number</label>
+          <input type="tel" name="phone" placeholder="Phone" onChange={handleChange} required />
+          <button type="submit">Next</button>
+        </form>
+      </div>
     </div>
   );
 }

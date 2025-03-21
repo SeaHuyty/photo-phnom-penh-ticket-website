@@ -8,8 +8,9 @@ CREATE TABLE users (
     phone VARCHAR(20) NOT NULL,
     used tinyint(1) NOT NULL DEFAULT 0,
     eventId INT NOT NULL,
+    qrCode VARCHAR(100) NOT NULL,
 
-    FOREIGN KEY (eventId) REFERENCES event (id);
+    FOREIGN KEY (eventId) REFERENCES event (id)
 );
 
 CREATE TABLE event (

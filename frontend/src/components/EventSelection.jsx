@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import eventImage from "../assets/poster2.jpg";
 
 function EventSelection() {
   const [events, setEvents] = useState([]);
@@ -13,25 +14,23 @@ function EventSelection() {
   }, []);
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <h2>Select Your Event</h2>
-      {events.map(event => (
-        <button 
-          key={event.id} 
-          onClick={() => navigate(`/create-qr/${event.id}`)}
-          disabled={event.tickets === 0}
-          style={{ 
-            margin: "10px", 
-            padding: "10px 20px", 
-            backgroundColor: event.tickets > 0 ? "#007bff" : "#ccc",
-            color: "#fff",
-            border: "none",
-            cursor: event.tickets > 0 ? "pointer" : "not-allowed"
-          }}
-        >
-          {event.name} ({event.tickets} left)
-        </button>
-      ))}
+    <div className="EventSelection">
+      <div className="EventInfo">
+        <h1>Welcome<br/>to Tuk-Tuk <br></br>Tour Ticket System</h1>
+        <h2>Select Your Event</h2>
+        <div className="SelectButton">
+          {events.map(event => (
+            <button 
+              key={event.id} 
+              onClick={() => navigate(`/create-qr/${event.id}`)}
+              disabled={event.tickets === 0}
+            >
+              {event.name} ({event.tickets} left)
+            </button>
+          ))}
+        </div>
+      </div>
+      <img src={eventImage} alt="Event" />
     </div>
   );
 }

@@ -75,6 +75,8 @@ const styles = {
     alignItems: "center",
   },
   doneButton: {
+    borderRadius: "5px",
+    borderStyle: "none",
     marginTop: "20px",
     padding: "10px 20px",
     fontSize: "16px",

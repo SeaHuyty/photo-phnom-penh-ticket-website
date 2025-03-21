@@ -73,7 +73,7 @@ This project is a **new version** of a previous project that used Python and sto
 
 1. Backend: dotenv, jsonwebtoken
 
-2. Frontend: axios, qrcode.react
+2. Frontend: axios, qrcode.react, html5-qrcode, qrcode.react, react-router-dom
 
 ## Usage
 
