@@ -170,8 +170,64 @@
     }
     /* style for the thank yoy page */
     .thankYou {
-      color: black;
+      height: 65vh;
+      font-size: 25px;
+      color: rgb(255, 255, 255);
       padding: 50px;
+
+      .text {
+        margin-top: 100px;
+      }
+    }
+    /* admin login */
+    .loginAdmin {
+      color: white;
+      height: 65vh;
+      width: 100%;
+
+      .adminForm {
+        /* margin: 0 auto; */
+        margin-top: 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        form {
+          padding: 20px;
+          border-radius: 20px;
+          background-color: rgb(255, 255, 255);
+          width: 70%;
+  
+          .username, .password {        
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+            /* gap: 20px; */
+
+            label {
+              color: rgb(162, 162, 162)
+            };
+            input {
+              background-color: #e4e4e4;
+              padding: 10px;
+              border-radius: 10px;
+              border: none;
+              width: 50%;
+            }
+          }
+          .submitButton {
+            margin-top: 20px;
+            border-radius: 20px;
+            border-style: none;
+            padding: 10px 50px; 
+            transition: 0.3s;
+          }
+
+        }
+      }
     }
   }
   footer {
