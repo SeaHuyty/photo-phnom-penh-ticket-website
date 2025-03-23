@@ -30,11 +30,12 @@ function BankQRCode() {
       </div>
 
       <div style={styles.checkboxContainer}>
-        <input 
+        <input
           type="checkbox" 
           checked={isChecked} 
           onChange={handleCheckboxChange} 
           id="payment-verification"
+          style={styles.checkbox} 
         />
         <label htmlFor="payment-verification">I have paid for the ticket.</label>
       </div>
@@ -57,6 +58,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
+    color: "white",
   },
   qrContainer: {
     display: "flex",
@@ -65,18 +67,28 @@ const styles = {
     paddingTop: "20px",
   },
   qrImage: {
-    width: "500px", // Adjust the size of your QR code image
-    height: "500px",
+    width: "450px", // Adjust the size of your QR code image
+    height: "450px",
   },
   checkboxContainer: {
     marginTop: "20px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    fontSize: "25px",
+  },
+  checkbox: {
+    transform: "scale(2)", // Make the checkbox bigger
+    borderStyle: "none",
+    borderRadius: "25px",
+    marginRight: "15px",  
+    cursor: "pointer",
   },
   doneButton: {
+    borderRadius: "5px",
+    borderStyle: "none",
     marginTop: "20px",
-    padding: "10px 20px",
+    padding: "10px 50px",
     fontSize: "16px",
     cursor: "pointer",
   },
