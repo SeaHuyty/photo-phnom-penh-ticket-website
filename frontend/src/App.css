@@ -228,6 +228,40 @@
 
         }
       }
+    } 
+    .AdminDashboard {
+      height: 65vh;
+      color: white;
+      width: 100%;
+
+      .adminButton {
+        border-radius: 30px;
+        padding: 50px;
+        background-color: #ffffff;
+        margin-top: 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+
+        button {
+          width: 40%;
+          color: white;
+          background-color: #BC2649;
+          border: 5px solid #BC2649;
+          padding: 10px 50px;
+          border-radius: 20px;
+          border-style: none;
+          transition: 0.3s;
+        }
+        button:hover {
+          color: black;
+          border: 5px solid #BC2649;
+          background: transparent;
+          /* transform: scale(1.05); */
+        }
+      }
     }
   }
   footer {
