@@ -88,6 +88,7 @@ function AdminPage() {
 
 const styles = {
   container: {
+    color: "white",
     padding: "20px",
     textAlign: "center",
   },
@@ -96,24 +97,31 @@ const styles = {
     margin: "0 auto",
     borderCollapse: "collapse",
     marginTop: "20px",
+    
+    color: "white", // Change the text color inside the table to white
+    borderSpacing: "0 10px", // Adds vertical spacing between rows
   },
   button: {
     padding: "10px 20px",
-    backgroundColor: "#4CAF50",
-    color: "white",
+    backgroundColor: "#fff",
+    color: "black", // Change button text color to black for contrast
     border: "none",
     cursor: "pointer",
     marginRight: "10px",
+    marginBottom: "15px", // Add gap below each button
+    borderRadius: "5px",
   },
   qrContainer: {
     padding: "10px", // Adds extra spacing around the QR code
     backgroundColor: "white", // Ensures a clear white background
     display: "none",
-    borderRadius: "8px", // Optional: Rounded edges
+    borderRadius: "8px",
   },
   qrCode: {
     border: "1px solid #ddd",
   },
 };
+
+
 
 export default AdminPage;

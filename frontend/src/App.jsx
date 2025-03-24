@@ -5,7 +5,7 @@ import CreateQr from "./components/CreateQr";
 import BankQRCode from "./components/BankQrCode";
 import ThankYou from "./components/ThankYou";
 import Login from "./components/Login";
-import AdminDashboard from "./components/AdminDashBoard";
+import AdminDashboard from "./components/AdminDashboard";
 import ScanQr from "./components/ScanQr";
 import AdminPage from "./components/AdminPage";
 import ProtectedRoute from "./components/ProtectedRoute";
