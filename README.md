@@ -40,40 +40,50 @@ This project is a **new version** of a previous project that used Python and sto
 | name   | VARCHAR(100) | Event name (e.g., Day 1, Day 2) |
 | ticket | INT          | Number of remaining tickets     |
 
+## `admins` Table
+
+| Column     | Type         | Description                     |
+| ---------- | ------------ | --------------------------------|
+| id         | INT (PK)     | Unique admin ID                 |
+| username   | VARCHAR(100) | Admin username                  |
+| password   | VARCHAR(100) | Admin password                  |
+
 ## Installation
 
 1. Clone the repository:
 
    ```sh
-   git clone https://github.com/your-username/qrcode-event.git
+   git clone https://github.com/SeaHuyty/2ndYear-Term2-Database-Project.git
    cd qrcode-event
    ```
 
-2. Install dependencies:
+2. Install Libraries and Dependency
 
-   ```sh
-   npm install
-   ```
+   1. Backend: 
+   
+      ```sh
+      cd backend
+      npm install dotenv jsonwebtoken
+      ```
 
-3. Set up the database and update `.env` file with your MySQL credentials.
+   2. Frontend: 
+      
+      ```sh
+      cd frontend
+      npm install axios html5-qrcode qrcode.react react-router-dom
+      ```
 
-4. Start the backend:
+3. Start the backend:
 
    ```sh
    node server.js
    ```
 
-5. Start the frontend:
+4. Start the frontend:
 
    ```sh
    npm run dev
    ```
-
-## Libraries Used:
-
-1. Backend: dotenv, jsonwebtoken
-
-2. Frontend: axios, qrcode.react, html5-qrcode, qrcode.react, react-router-dom
 
 ## Usage
 
