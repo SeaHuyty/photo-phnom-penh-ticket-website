@@ -18,7 +18,7 @@ const App = () => {
       <div className="container">
         {/* nav bar */}
         <nav className="navbar"> 
-          <h1>Photo-Phnom-Penh</h1>
+          <h1>Photo Phnom Penh</h1>
           <ul>
             <li><a href="#">Home</a></li>
             <li><a href="#">About</a></li>

@@ -25,7 +25,7 @@ function EventSelection() {
               onClick={() => navigate(`/create-qr/${event.id}`)}
               disabled={event.tickets === 0}
             >
-              {event.name} ({event.tickets} left)
+              {event.name}
             </button>
           ))}
         </div>

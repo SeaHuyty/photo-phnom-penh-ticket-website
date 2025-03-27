@@ -9,7 +9,7 @@ function ScanQr() {
 
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("reader", {
-      qrbox: 250, // Size of the scanning area
+      qrbox: 500, // Size of the scanning area
       fps: 5, // Frames per second for scanning
     });
 
@@ -79,7 +79,7 @@ function ScanQr() {
 
   return (
     <div>
-      <h1>QR Code Scanner</h1>
+      <h1 style={{color: white}}>QR Code Scanner</h1>
 
       {/* Scanner container */}
       <div
