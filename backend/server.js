@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "1234",
+    password: "123abc",
     database: "qrcode_db",
 });
 
@@ -55,7 +55,7 @@ app.post("/api/register", (req, res) => {
             if (err) return res.status(500).send("Database error");
     
             const usedIds = results.map(row => row.id);
-            let availableIds = Array.from({ length: 9999999999 }, (_, i) => i + 1000000000)
+            let availableIds = Array.from({ length: 999999 }, (_, i) => i + 100000)
                                     .filter(id => !usedIds.includes(id));
     
             if (availableIds.length === 0) {
