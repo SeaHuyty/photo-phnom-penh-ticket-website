@@ -79,7 +79,7 @@ function ScanQr() {
 
   return (
     <div>
-      <h1 style={{color: white}}>QR Code Scanner</h1>
+      <h1>QR Code Scanner</h1>
 
       {/* Scanner container */}
       <div
