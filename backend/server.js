@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "1234",
+    password: "rootAdmin123",
     database: "qrcode_db",
 });
 
