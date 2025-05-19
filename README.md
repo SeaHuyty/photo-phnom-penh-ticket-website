@@ -90,13 +90,3 @@ This project is a **new version** of a previous project that used Python and sto
 1. **User Registration**: Fill out the form and select an event day.
 2. **QR Code Generation**: A unique QR code will be displayed after successful registration.
 3. **Scanning & Verification**: The admin scans the QR code, and the system verifies if it is valid and unused.
-
-## Future Enhancements
-
-- Implement **admin authentication** for the scanner page
-- Add **email notifications** for ticket confirmation
-- Improve UI/UX for better user experience
-
-## License
-
-This project is licensed under the MIT License..
