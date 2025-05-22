@@ -52,7 +52,7 @@ This project is a **new version** of a previous project that used Python and sto
 
    ```sh
    git clone https://github.com/SeaHuyty/2ndYear-Term2-Database-Project.git
-   cd qrcode-event
+   cd 2ndYear-Term2-Database-Project
    ```
 
 2. Install Libraries and Dependency
@@ -61,14 +61,14 @@ This project is a **new version** of a previous project that used Python and sto
    
       ```sh
       cd backend
-      npm install dotenv jsonwebtoken
+      npm install
       ```
 
    2. Frontend: 
       
       ```sh
       cd frontend
-      npm install axios html5-qrcode qrcode.react react-router-dom
+      npm install
       ```
 
 3. Start the backend:
