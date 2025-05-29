@@ -1,6 +1,12 @@
 CREATE DATABASE qrcode_db;
 USE qrcode_db;
 
+CREATE TABLE event (
+    id AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    tickets INT NOT NULL,
+);
+
 CREATE TABLE users (
     id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -11,12 +17,6 @@ CREATE TABLE users (
     qrCode VARCHAR(100) NOT NULL,
 
     FOREIGN KEY (eventId) REFERENCES event (id)
-);
-
-CREATE TABLE event (
-    id AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    tickets INT NOT NULL,
 );
 
 CREATE TABLE admins (
