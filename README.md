@@ -1,6 +1,6 @@
 # QR Code Event Ticketing System
 
-This project is a **new version** of a previous project that used Python and stored data in a CSV file for **Tuk Tuk Tour** of **15th Photo Phnom Penh Festival**. The updated system now utilizes a **QR code-based event ticketing system** that allows users to register for an event, generate a unique QR code, and verify their attendance via scanning. The system supports two event days, each with a ticket limit of 200. The QR code contains a unique user ID and is validated upon scanning.
+This project is a **new version** of a [previous project that used Python](https://github.com/SeaHuyty/photo-phnom-penh-festival-ticket-system) and stored data in a CSV file for **Tuk Tuk Tour** of **15th Photo Phnom Penh Festival**.
 
 ## Features
 
@@ -13,7 +13,7 @@ This project is a **new version** of a previous project that used Python and sto
 
 ## Tech Stack
 
-- **Frontend:** React, HTML5 QR code scanner
+- **Frontend:** React
 - **Backend:** Express.js (Node.js)
 - **Database:** MySQL
 
@@ -88,3 +88,7 @@ This project is a **new version** of a previous project that used Python and sto
 1. **User Registration**: Fill out the form and select an event day.
 2. **QR Code Generation**: A unique QR code will be displayed after successful registration.
 3. **Scanning & Verification**: The admin scans the QR code, and the system verifies if it is valid and unused.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
