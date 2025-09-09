@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import EventSelection from "./components/EventSelection";
 import CreateQr from "./components/CreateQr";
 import BankQRCode from "./components/BankQrCode";
@@ -13,7 +13,7 @@ import './App.css';
 
 const App = () => {
   return (
-    <Router>
+    <BrowserRouter>
       {/* //container to store */}
       <div className="container">
         {/* nav bar */}
@@ -53,7 +53,7 @@ const App = () => {
           <p>&copy; 2024 Photo-Phnom-Penh</p>
         </footer>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 };
 
