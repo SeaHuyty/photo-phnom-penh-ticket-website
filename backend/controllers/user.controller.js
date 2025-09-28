@@ -1,5 +1,7 @@
 // User Controller
-import pool from '../database/config.js';
+import User from '../models/User.js';
+import Event from '../models/Event.js';
+import { sequelize } from '../models/index.js';
 
 export const registerUser = async (req, res) => {
     const { name, email, phone, eventId } = req.body;
@@ -8,43 +10,51 @@ export const registerUser = async (req, res) => {
         return res.status(400).json({ message: "All fields are required" });
     }
 
+    const transaction = await sequelize.transaction();
+    
     try {
-        const eventResult = await pool.query("SELECT tickets FROM event WHERE id = $1", [eventId]);
+        // Check if event exists
+        const event = await Event.findByPk(eventId, { transaction });
 
-        if (eventResult.rows.length === 0) {
+        if (!event) {
+            await transaction.rollback();
             return res.status(400).json({ message: "Event not found" });
         }
 
-        const ticketsAvailable = eventResult.rows[0].tickets;
+        // Get all existing user IDs
+        const existingUsers = await User.findAll({
+            attributes: ['id'],
+            transaction
+        });
 
-        if (ticketsAvailable <= 0) {
-            return res.status(400).json({ message: "No tickets available for this event" });
-        }
-
-        const usersResult = await pool.query("SELECT id FROM users");
-
-        const usedIds = usersResult.rows.map(row => row.id);
+        const usedIds = existingUsers.map(user => user.id);
 
         let availableIds = Array.from({ length: 999999 }, (_, i) => i + 100000)
             .filter(id => !usedIds.includes(id));
 
         if (availableIds.length === 0) {
+            await transaction.rollback();
             return res.status(400).json({ message: "No more IDs available" });
         }
 
         const userId = availableIds[Math.floor(Math.random() * availableIds.length)];
-
         const qrCode = `${userId}-${eventId}`;
 
-        await pool.query("UPDATE event SET tickets = tickets - 1 WHERE id = $1", [eventId]);
+        // Create new user
+        await User.create({
+            id: userId,
+            name,
+            email,
+            phone,
+            used: false,
+            eventId,
+            qrCode
+        }, { transaction });
 
-        await pool.query(
-            "INSERT INTO users (id, name, email, phone, used, eventId, qrCode) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-            [userId, name, email, phone, 0, eventId, qrCode]
-        );
-
+        await transaction.commit();
         res.status(201).json({ qrCode });
     } catch (err) {
+        await transaction.rollback();
         console.error(err);
         res.status(500).json({ message: "Internal Server Error" });
     }
@@ -60,17 +70,20 @@ export const verifyQrCode = async (req, res) => {
     qrCode = qrCode.toString().trim();
 
     try {
-        const result = await pool.query("SELECT * FROM users WHERE qrCode = $1", [qrCode]);
+        const user = await User.findOne({ 
+            where: { qrCode },
+            include: [{ model: Event, as: 'event' }]
+        });
 
-        if (result.rows.length === 0) {
+        if (!user) {
             return res.status(400).json({ message: "Invalid QR Code" });
         }
 
-        if (result.rows[0].used) {
+        if (user.used) {
             return res.status(400).json({ message: "QR Code already used" });
         }
 
-        await pool.query("UPDATE users SET used = 1 WHERE qrCode = $1", [qrCode]);
+        await user.update({ used: true });
 
         res.status(200).json({ message: "✅ QR Code verified successfully" });
     } catch (err) {
@@ -81,13 +94,13 @@ export const verifyQrCode = async (req, res) => {
 
 export const getEvents = async (req, res) => {
     try {
-        const results = await pool.query("SELECT * FROM event WHERE tickets > 0");
+        const events = await Event.findAll();
 
-        if (results.rows.length === 0) {
-            return res.status(404).json({ message: "No events with available tickets found" });
+        if (events.length === 0) {
+            return res.status(404).json({ message: "No events found" });
         }
 
-        res.status(200).json(results.rows);
+        res.status(200).json(events);
     } catch (err) {
         console.log('Error fetching events:', err);
         res.status(500).json({ message: "Internal Server Error" });
@@ -96,8 +109,10 @@ export const getEvents = async (req, res) => {
 
 export const getUsers = async (req, res) => {
     try {
-        const results = await pool.query("SELECT * FROM users");
-        res.status(200).json(results.rows);
+        const users = await User.findAll({
+            include: [{ model: Event, as: 'event' }]
+        });
+        res.status(200).json(users);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal Server Error" });

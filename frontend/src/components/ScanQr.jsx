@@ -1,40 +1,58 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import axios from "axios";
 
 function ScanQr() {
   const [scanResult, setScanResult] = useState(null);
   const [verificationMessage, setVerificationMessage] = useState(null);
-  const [isScanning, setIsScanning] = useState(true); // To control continuous scanning
+  const [isScanning, setIsScanning] = useState(true);
+  const scannerRef = useRef(null);
 
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("reader", {
-      qrbox: 500, // Size of the scanning area
-      fps: 5, // Frames per second for scanning
-    });
-
-    if (isScanning) {
-      // Render the scanner with success and error callbacks
+    if (isScanning && !scannerRef.current) {
+      // Only create scanner if we're scanning and don't have one already
+      const scanner = new Html5QrcodeScanner("reader", {
+        qrbox: 500,
+        fps: 5,
+      });
+      
+      scannerRef.current = scanner;
       scanner.render(handleScanSuccess, handleScanError);
-    } else {
-      scanner.clear(); // Stop scanning
     }
 
     return () => {
-      scanner.clear();
+      // Clean up scanner when component unmounts or when stopping
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(err => console.error("Error clearing scanner:", err));
+        scannerRef.current = null;
+      }
     };
   }, [isScanning]);
 
   // Handle successful scan
   function handleScanSuccess(result) {
-    const qrCode = result; // Assuming the QR code content itself is the result
+    const qrCode = result;
     setScanResult(qrCode);
-    sendToServer(qrCode); // Send QR code to the server for verification
+    
+    // Stop scanning immediately to prevent multiple scans
+    setIsScanning(false);
+    
+    // Clear the scanner
+    if (scannerRef.current) {
+      scannerRef.current.clear().catch(err => console.error("Error clearing scanner:", err));
+      scannerRef.current = null;
+    }
+    
+    // Send to server
+    sendToServer(qrCode);
   }
 
   // Handle scan errors
   function handleScanError(err) {
-    console.warn("Scan error:", err);
+    // Only log warnings, don't spam the console
+    if (err && !err.includes("No MultiFormat Readers")) {
+      console.warn("Scan error:", err);
+    }
   }
 
   // Function to play sound feedback
@@ -56,17 +74,13 @@ function ScanQr() {
         setVerificationMessage(response.data.message);
 
         if (response.data.message === "QR Code already used") {
-            // Handle used QR code logic if necessary
             playErrorBeep();
         } else {
-            playBeep(); // Play sound when verified
+            playBeep();
         }
-
-        // Stop scanning after result is obtained
-        setIsScanning(false);
     } catch (error) {
         setVerificationMessage(error.response?.data?.message || "Verification failed");
-        setIsScanning(false); // Stop scanning on error
+        playErrorBeep();
     }
   }
 
@@ -74,7 +88,15 @@ function ScanQr() {
   function resetScan() {
     setScanResult(null);
     setVerificationMessage(null);
-    setIsScanning(true); // Restart the scanning process
+    
+    // Clear the scanner div content before restarting
+    const readerElement = document.getElementById("reader");
+    if (readerElement) {
+      readerElement.innerHTML = "";
+    }
+    
+    // Restart scanning
+    setIsScanning(true);
   }
 
   return (

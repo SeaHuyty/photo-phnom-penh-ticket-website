@@ -1,6 +1,7 @@
 // Admin Controller
-import pool from '../database/config.js';
+import Admin from '../models/Admin.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,15 +12,18 @@ export const adminLogin = async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        const results = await pool.query("SELECT * FROM admins WHERE username = $1", [username]);
+        const admin = await Admin.findOne({
+            where: { username }
+        });
 
-        if (results.rows.length === 0) {
+        if (!admin) {
             return res.status(401).json({ message: "Admin not found" });
         }
 
-        const admin = results.rows[0];
-
-        if (password !== admin.password) {
+        // Compare password directly using bcrypt
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        
+        if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid password" });
         }
         
