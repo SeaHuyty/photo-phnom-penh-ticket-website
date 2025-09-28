@@ -128,7 +128,6 @@ function AdminNewPage() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Event</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -139,15 +138,12 @@ function AdminNewPage() {
                   <td className="user-name">{user.name}</td>
                   <td className="user-email">{user.email}</td>
                   <td className="user-phone">{user.phone}</td>
-                  <td className="user-event">
-                    <span className="event-badge">{user.eventId || 'Unknown'}</span>
-                  </td>
                   <td className="user-actions">
                     <button
                       onClick={() => handleGenerateQRCode(user.qrCode)}
                       className="download-qr-btn"
                     >
-                      📱 Download QR
+                      Download QR
                     </button>
                     <div className="qr-container">
                       <QRCodeCanvas

@@ -8,13 +8,15 @@ const AdminSidebar = ({ children }) => {
     const menuItems = [
         {
             label: "Scan QR Code",
-            path: "/admin/scan",
-            icon: "📱"
+            path: "/admin/scan"
         },
         {
             label: "User Management",
-            path: "/admin/users",
-            icon: "👥"
+            path: "/admin/users"
+        },
+        {
+            label: "Attendance Check",
+            path: "/admin/attendance"
         }
     ];
 
@@ -45,7 +47,6 @@ const AdminSidebar = ({ children }) => {
 
                 <div className="sidebar-footer">
                     <button className="logout-btn" onClick={handleLogout}>
-                        <span className="sidebar-icon">🚪</span>
                         <span className="sidebar-label">Logout</span>
                     </button>
                 </div>

@@ -8,6 +8,7 @@ import Login from "./components/Login";
 import AdminSidebar from "./components/AdminSidebar";
 import ScanQr from "./components/ScanQr";
 import AdminNewPage from "./components/AdminNewPage";
+import AttendanceCheck from "./components/AttendanceCheck";
 import ProtectedRoute from "./components/ProtectedRoute";
 import './App.css';
 
@@ -26,6 +27,7 @@ const AppContent = () => {
                 <Routes>
                   <Route path="scan" element={<ScanQr />} />
                   <Route path="users" element={<AdminNewPage />} />
+                  <Route path="attendance" element={<AttendanceCheck />} />
                 </Routes>
               </AdminSidebar>
             </ProtectedRoute>

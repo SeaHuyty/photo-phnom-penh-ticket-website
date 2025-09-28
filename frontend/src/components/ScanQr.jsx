@@ -57,13 +57,13 @@ function ScanQr() {
 
   // Function to play sound feedback
   function playBeep() {
-    const beep = new Audio("/beep.mp3"); // Ensure you have the sound file
+    const beep = new Audio("/beep.mp3");
     beep.play();
   }
 
   // Function to display error sound feedback
   function playErrorBeep() {
-    const beep = new Audio("/errorNotBeep.mp3"); // Ensure you have the sound file
+    const beep = new Audio("/errorNotBeep.mp3");
     beep.play();
   }
 
