@@ -38,6 +38,35 @@ export const adminLogin = async (req, res) => {
     }
 };
 
+export const checkAuth = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ message: "No token provided" });
+        }
+        
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        // Check if admin still exists
+        const admin = await Admin.findByPk(decoded.id);
+        if (!admin) {
+            return res.status(401).json({ message: "Admin not found" });
+        }
+        
+        res.status(200).json({ 
+            message: "Authenticated", 
+            admin: { 
+                id: admin.id, 
+                username: admin.username 
+            } 
+        });
+    } catch (err) {
+        console.error('Auth check error:', err);
+        res.status(401).json({ message: "Invalid token" });
+    }
+};
+
 export const getAttendanceData = async (req, res) => {
     try {
         const { status, eventId } = req.query;

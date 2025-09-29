@@ -3,7 +3,8 @@
 
 CREATE TABLE IF NOT EXISTS event (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL,
+    code VARCHAR(6) UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -24,9 +25,9 @@ CREATE TABLE IF NOT EXISTS admins (
 );
 
 -- Sample data
-INSERT INTO event (name) VALUES 
-('Phnom Penh Festival 2025'),
-('Cultural Night Experience');
+INSERT INTO event (name, code) VALUES 
+('Phnom Penh Festival 2025', '240925'),
+('Cultural Night Experience', '241005');
 
 INSERT INTO admins (username, password) VALUES 
 ('admin', 'admin123');

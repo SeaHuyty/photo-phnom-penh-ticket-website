@@ -10,9 +10,6 @@ const seedAdmins = async () => {
         // Connect to database
         await connectDB();
 
-        // Clear existing admins (optional)
-        await Admin.destroy({ where: {} });
-
         // Hash the password before creating admin
         const saltRounds = 10;
         const password = process.env.ADMIN_PASSWORD;

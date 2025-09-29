@@ -10,6 +10,11 @@ const Event = sequelize.define('Event', {
   name: {
     type: DataTypes.STRING(100),
     allowNull: false
+  },
+  code: {
+    type: DataTypes.STRING(6),
+    allowNull: false,
+    unique: true
   }
 }, {
   tableName: 'event',

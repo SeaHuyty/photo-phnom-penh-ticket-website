@@ -1,21 +1,26 @@
 import Event from '../models/Event.js';
 import { connectDB } from '../models/index.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const codeOne = process.env.EVENT_CODE_DAY1;
+const codeTwo = process.env.EVENT_CODE_DAY2;
 
 const seedEvents = async () => {
     try {
         // Connect to database
         await connectDB();
 
-        // Clear existing events (optional)
-        await Event.destroy({ where: {} });
-
         // Create events
         const events = await Event.bulkCreate([
             {
-                name: 'Phnom Penh Festival 2025'
+                name: 'Tuk-Tuk Tour Day 1',
+                code: codeOne
             },
             {
-                name: 'Cultural Night Experience'
+                name: 'Tuk-Tuk Tour Day 2',
+                code: codeTwo
             }
         ]);
 
@@ -23,6 +28,8 @@ const seedEvents = async () => {
         events.forEach(event => {
             console.log(`   - ${event.name}`);
         });
+
+        return events;
     } catch (error) {
         console.error('❌ Error seeding events:', error);
     }

@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children }) => {
                 const response = await fetch('http://localhost:3000/api/admin/check-auth', {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,  // Make sure token is in localStorage
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,  // Make sure token is in localStorage
                     },
                 });
 

@@ -25,6 +25,7 @@ const AppContent = () => {
             <ProtectedRoute>
               <AdminSidebar>
                 <Routes>
+                  <Route index element={<AdminNewPage />} />
                   <Route path="scan" element={<ScanQr />} />
                   <Route path="users" element={<AdminNewPage />} />
                   <Route path="attendance" element={<AttendanceCheck />} />

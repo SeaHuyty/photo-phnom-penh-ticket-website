@@ -8,6 +8,7 @@ function AdminNewPage() {
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState("all");
   const [eventCounts, setEventCounts] = useState({});
+  const [eventsMap, setEventsMap] = useState({});
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -17,13 +18,20 @@ function AdminNewPage() {
         setUsers(userData);
         setFilteredUsers(userData);
         
-        // Calculate event counts
-        const counts = userData.reduce((acc, user) => {
+        // Calculate event counts and create events mapping
+        const counts = {};
+        const eventsMapping = {};
+        
+        userData.forEach(user => {
           const eventId = user.eventId || 'Unknown';
-          acc[eventId] = (acc[eventId] || 0) + 1;
-          return acc;
-        }, {});
+          const eventName = user.event?.name || 'Unknown Event';
+          
+          counts[eventId] = (counts[eventId] || 0) + 1;
+          eventsMapping[eventId] = eventName;
+        });
+        
         setEventCounts(counts);
+        setEventsMap(eventsMapping);
         
         setLoading(false);
       } catch (error) {
@@ -92,10 +100,10 @@ function AdminNewPage() {
             onChange={(e) => handleEventFilter(e.target.value)}
             className="event-filter-dropdown"
           >
-            <option value="all">All Events ({totalUsers})</option>
+            <option value="all">All Events</option>
             {uniqueEvents.map((eventId) => (
               <option key={eventId} value={eventId}>
-                {eventId || 'Unknown Event'} ({eventCounts[eventId] || 0})
+                {eventsMap[eventId] || 'Unknown Event'}
               </option>
             ))}
           </select>
@@ -128,6 +136,7 @@ function AdminNewPage() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Event</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -138,6 +147,7 @@ function AdminNewPage() {
                   <td className="user-name">{user.name}</td>
                   <td className="user-email">{user.email}</td>
                   <td className="user-phone">{user.phone}</td>
+                  <td className="user-event">{user.event?.name || 'Unknown Event'}</td>
                   <td className="user-actions">
                     <button
                       onClick={() => handleGenerateQRCode(user.qrCode)}

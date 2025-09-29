@@ -38,7 +38,7 @@ export const registerUser = async (req, res) => {
         }
 
         const userId = availableIds[Math.floor(Math.random() * availableIds.length)];
-        const qrCode = `${userId}-${eventId}`;
+        const qrCode = `${userId}-${event.code}`;
 
         // Create new user
         await User.create({
