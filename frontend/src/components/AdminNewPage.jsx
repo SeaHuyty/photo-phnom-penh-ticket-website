@@ -4,6 +4,27 @@ import { QRCodeCanvas } from "qrcode.react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import QRCode from "qrcode";
+import CryptoJS from "crypto-js";
+
+// QR Code Security Functions
+const QR_SECRET_KEY = "phnom-penh-festival-qr-secret-2024"; // Should match backend
+
+const hashQRData = (originalData) => {
+  try {
+    // Create a hash of the original QR code data
+    const hash = CryptoJS.HmacSHA256(originalData, QR_SECRET_KEY).toString();
+    return hash;
+  } catch (error) {
+    console.error('Error hashing QR data:', error);
+    return originalData; // Fallback to original data
+  }
+};
+
+const decodeQRData = (hashedData) => {
+  // Note: HMAC is one-way, so we can't decode it back to original
+  // The backend will need to hash the original data and compare
+  return hashedData;
+};
 
 function AdminNewPage() {
   const [users, setUsers] = useState([]);
@@ -120,6 +141,8 @@ function AdminNewPage() {
 
   const handleGenerateQRCode = async (userQrCode) => {
     try {
+      // Hash the QR code data before generating
+      const hashedQRData = hashQRData(userQrCode);
       const canvas = document.getElementById(`qrCanvas-${userQrCode}`);
       if (canvas) {
         const imageUrl = canvas.toDataURL("image/png");
@@ -172,8 +195,11 @@ function AdminNewPage() {
           canvas.width = size;
           canvas.height = size;
           
-          // Use QRCode library to generate to canvas
-          await QRCode.toCanvas(canvas, ticket.qrCode, {
+          // Hash the QR code data before generating
+          const hashedQRData = hashQRData(ticket.qrCode);
+          
+          // Use QRCode library to generate to canvas with hashed data
+          await QRCode.toCanvas(canvas, hashedQRData, {
             width: size,
             margin: 2,
             color: {
@@ -404,7 +430,7 @@ function AdminNewPage() {
                         <QRCodeCanvas
                           key={ticket.id}
                           id={`qrCanvas-${ticket.qrCode}`}
-                          value={ticket.qrCode}
+                          value={hashQRData(ticket.qrCode)}
                           size={300}
                           includeMargin={true}
                         />

@@ -2,6 +2,23 @@
 import User from '../models/User.js';
 import Event from '../models/Event.js';
 import { sequelize } from '../models/index.js';
+import CryptoJS from 'crypto-js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// QR Code Security Functions
+const QR_SECRET_KEY = process.env.QR_SECRET_KEY;
+
+const hashQRData = (originalData) => {
+  try {
+    const hash = CryptoJS.HmacSHA256(originalData, QR_SECRET_KEY).toString();
+    return hash;
+  } catch (error) {
+    console.error('Error hashing QR data:', error);
+    return originalData;
+  }
+};
 
 export const registerUser = async (req, res) => {
     const { name, email, phone, eventId, quantity = 1 } = req.body;
@@ -83,7 +100,7 @@ export const registerUser = async (req, res) => {
 };
 
 export const verifyQrCode = async (req, res) => {
-    let { qrCode } = req.body;
+    let { qrCode, isHashed } = req.body;
 
     if (!qrCode) {
         return res.status(400).json({ message: "QR Code is required" });
@@ -92,10 +109,29 @@ export const verifyQrCode = async (req, res) => {
     qrCode = qrCode.toString().trim();
 
     try {
-        const user = await User.findOne({ 
-            where: { qrCode },
-            include: [{ model: Event, as: 'event' }]
-        });
+        let user = null;
+        
+        if (isHashed) {
+            // If the QR code is hashed, we need to find the original by hashing all stored QR codes
+            const allUsers = await User.findAll({
+                include: [{ model: Event, as: 'event' }]
+            });
+            
+            // Find user by comparing hashed values
+            for (const potentialUser of allUsers) {
+                const hashedOriginal = hashQRData(potentialUser.qrCode);
+                if (hashedOriginal === qrCode) {
+                    user = potentialUser;
+                    break;
+                }
+            }
+        } else {
+            // Legacy support: direct QR code lookup (for backward compatibility)
+            user = await User.findOne({ 
+                where: { qrCode },
+                include: [{ model: Event, as: 'event' }]
+            });
+        }
 
         if (!user) {
             return res.status(400).json({ message: "Invalid QR Code" });
@@ -105,9 +141,18 @@ export const verifyQrCode = async (req, res) => {
             return res.status(400).json({ message: "QR Code already used" });
         }
 
-        await user.update({ used: true });
+        await user.update({ 
+            used: true,
+            scannedAt: new Date()
+        });
 
-        res.status(200).json({ message: "✅ QR Code verified successfully" });
+        res.status(200).json({ 
+            message: "✅ QR Code verified successfully",
+            user: {
+                name: user.name,
+                event: user.event.name
+            }
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal Server Error" });

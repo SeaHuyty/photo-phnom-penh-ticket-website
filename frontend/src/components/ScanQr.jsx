@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import axios from "axios";
+import CryptoJS from "crypto-js";
+
+// QR Code Security Functions (should match AdminNewPage.jsx)
+const QR_SECRET_KEY = "phnom-penh-festival-qr-secret-2024"; // Should match backend
+
+const decodeHashedQR = (hashedData) => {
+  // Since HMAC is one-way, we send the hashed data to backend
+  // Backend will hash original QR codes and compare with this hash
+  return hashedData;
+};
 
 function ScanQr() {
   const [scanResult, setScanResult] = useState(null);
@@ -67,10 +77,16 @@ function ScanQr() {
     beep.play();
   }
 
-  // In ScanQr.jsx, send the QR code content to the server instead of userId
-  async function sendToServer(qrCode) {
+  // In ScanQr.jsx, send the hashed QR code content to the server
+  async function sendToServer(scannedQRCode) {
     try {
-        const response = await axios.post("http://localhost:3000/api/verify", { qrCode });
+        // The scanned QR code is already hashed, so we send it as is
+        const decodedQR = decodeHashedQR(scannedQRCode);
+        
+        const response = await axios.post("http://localhost:3000/api/verify", { 
+          qrCode: decodedQR,
+          isHashed: true // Flag to let backend know this is a hashed QR code
+        });
         setVerificationMessage(response.data.message);
 
         if (response.data.message === "QR Code already used") {
