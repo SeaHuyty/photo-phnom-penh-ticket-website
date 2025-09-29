@@ -15,7 +15,9 @@ const seedUsers = async (events) => {
                 phone: '123-456-7890',
                 used: false,
                 eventId: events[0].id,
-                qrCode: `123456-${events[0].code}`
+                qrCode: `123456-${events[0].code}`,
+                ticketNumber: 1,
+                purchaserEmail: 'john.doe@example.com'
             },
             {
                 id: 789012,
@@ -24,7 +26,9 @@ const seedUsers = async (events) => {
                 phone: '987-654-3210',
                 used: false,
                 eventId: events[1].id,
-                qrCode: `789012-${events[1].code}`
+                qrCode: `789012-${events[1].code}`,
+                ticketNumber: 1,
+                purchaserEmail: 'jane.smith@example.com'
             }
         ]);
 

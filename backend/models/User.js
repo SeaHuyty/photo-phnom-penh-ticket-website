@@ -14,8 +14,7 @@ const User = sequelize.define('User', {
   },
   email: {
     type: DataTypes.STRING(100),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   phone: {
     type: DataTypes.STRING(20),
@@ -37,6 +36,19 @@ const User = sequelize.define('User', {
   qrCode: {
     type: DataTypes.STRING(100),
     allowNull: false
+  },
+  ticketNumber: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
+  purchaserEmail: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  scannedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'users',

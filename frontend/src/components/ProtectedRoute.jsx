@@ -16,7 +16,6 @@ const ProtectedRoute = ({ children }) => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log(data);
                     setIsAuthenticated(true); // Admin is authenticated
                 } else {
                     setIsAuthenticated(false); // Admin is not authenticated

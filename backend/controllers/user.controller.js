@@ -4,10 +4,14 @@ import Event from '../models/Event.js';
 import { sequelize } from '../models/index.js';
 
 export const registerUser = async (req, res) => {
-    const { name, email, phone, eventId } = req.body;
+    const { name, email, phone, eventId, quantity = 1 } = req.body;
 
     if (!name || !email || !phone || !eventId) {
         return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (quantity < 1 || quantity > 10) {
+        return res.status(400).json({ message: "Quantity must be between 1 and 10" });
     }
 
     const transaction = await sequelize.transaction();
@@ -32,27 +36,45 @@ export const registerUser = async (req, res) => {
         let availableIds = Array.from({ length: 999999 }, (_, i) => i + 100000)
             .filter(id => !usedIds.includes(id));
 
-        if (availableIds.length === 0) {
+        if (availableIds.length < quantity) {
             await transaction.rollback();
-            return res.status(400).json({ message: "No more IDs available" });
+            return res.status(400).json({ message: "Not enough IDs available" });
         }
 
-        const userId = availableIds[Math.floor(Math.random() * availableIds.length)];
-        const qrCode = `${userId}-${event.code}`;
-
-        // Create new user
-        await User.create({
-            id: userId,
-            name,
-            email,
-            phone,
-            used: false,
-            eventId,
-            qrCode
-        }, { transaction });
+        const createdTickets = [];
+        
+        // Create multiple tickets
+        for (let i = 0; i < quantity; i++) {
+            const userId = availableIds[i];
+            const qrCode = `${userId}-${event.code}`;
+            const ticketName = quantity > 1 ? `${name} (Ticket ${i + 1})` : name;
+            
+            const ticket = await User.create({
+                id: userId,
+                name: ticketName,
+                email,
+                phone,
+                used: false,
+                eventId,
+                qrCode,
+                ticketNumber: i + 1,
+                purchaserEmail: email,
+                scannedAt: null
+            }, { transaction });
+            
+            createdTickets.push({
+                id: ticket.id,
+                qrCode: ticket.qrCode,
+                ticketNumber: ticket.ticketNumber
+            });
+        }
 
         await transaction.commit();
-        res.status(201).json({ qrCode });
+        res.status(201).json({ 
+            message: `${quantity} ticket(s) created successfully`,
+            tickets: createdTickets,
+            totalTickets: quantity
+        });
     } catch (err) {
         await transaction.rollback();
         console.error(err);
