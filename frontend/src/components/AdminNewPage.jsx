@@ -9,6 +9,8 @@ import CryptoJS from "crypto-js";
 // QR Code Security Functions
 const QR_SECRET_KEY = "phnom-penh-festival-qr-secret-2024"; // Should match backend
 
+const BASE_URL = "http://localhost:3000/api";
+
 const hashQRData = (originalData) => {
   try {
     // Create a hash of the original QR code data
@@ -18,12 +20,6 @@ const hashQRData = (originalData) => {
     console.error('Error hashing QR data:', error);
     return originalData; // Fallback to original data
   }
-};
-
-const decodeQRData = (hashedData) => {
-  // Note: HMAC is one-way, so we can't decode it back to original
-  // The backend will need to hash the original data and compare
-  return hashedData;
 };
 
 function AdminNewPage() {
@@ -49,8 +45,8 @@ function AdminNewPage() {
     const fetchData = async () => {
       try {
         const [usersResponse, eventsResponse] = await Promise.all([
-          axios.get("http://localhost:3000/api/users"),
-          axios.get("http://localhost:3000/api/events")
+          axios.get(`${BASE_URL}/users`),
+          axios.get(`${BASE_URL}/events`)
         ]);
         
         const userData = usersResponse.data;
@@ -262,7 +258,7 @@ function AdminNewPage() {
     setCreateLoading(true);
     
     try {
-      const response = await axios.post("http://localhost:3000/api/register", {
+      const response = await axios.post(`${BASE_URL}/register`, {
         name: newUser.name,
         email: newUser.email,
         phone: newUser.phone,
@@ -271,7 +267,7 @@ function AdminNewPage() {
       });
       
       // Refresh users data
-      const usersResponse = await axios.get("http://localhost:3000/api/users");
+      const usersResponse = await axios.get(`${BASE_URL}/users`);
       const userData = usersResponse.data;
       setUsers(userData);
       setFilteredUsers(userData);
