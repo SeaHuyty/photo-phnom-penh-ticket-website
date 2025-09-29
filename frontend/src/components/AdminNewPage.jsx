@@ -166,9 +166,15 @@ function AdminNewPage() {
         ticketInfo += `  - Scanned: ${ticket.scannedAt ? 'Yes' : 'No'}\n`;
         
         try {
-          // Generate QR code PNG buffer
-          const qrBuffer = await QRCode.toBuffer(ticket.qrCode, {
-            width: 300,
+          // Generate QR code using canvas (browser-compatible)
+          const canvas = document.createElement('canvas');
+          const size = 300;
+          canvas.width = size;
+          canvas.height = size;
+          
+          // Use QRCode library to generate to canvas
+          await QRCode.toCanvas(canvas, ticket.qrCode, {
+            width: size,
             margin: 2,
             color: {
               dark: '#000000',
@@ -176,8 +182,13 @@ function AdminNewPage() {
             }
           });
           
+          // Convert canvas to blob
+          const qrImageBlob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, 'image/png');
+          });
+          
           const fileName = `ticket_${String(i + 1).padStart(2, '0')}_${ticket.ticketNumber || ticket.id}.png`;
-          qrFolder.file(fileName, qrBuffer);
+          qrFolder.file(fileName, qrImageBlob);
           
         } catch (qrError) {
           console.warn(`Failed to generate QR for ticket ${i + 1}:`, qrError);
@@ -192,7 +203,7 @@ function AdminNewPage() {
       qrFolder.file('ticket_info.txt', ticketInfo);
       
       // Wait a moment for all files to be processed
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Generate and download ZIP
       const content = await zip.generateAsync({ 
@@ -204,6 +215,7 @@ function AdminNewPage() {
       const fileName = `${groupedUser.name.replace(/[^a-zA-Z0-9\s]/g, '_')}_${groupedUser.tickets.length}_QR_Codes.zip`;
       saveAs(content, fileName);
       
+      console.log(`Successfully created ZIP file with ${groupedUser.tickets.length} QR codes for ${groupedUser.name}`);
       alert(`Successfully downloaded ${groupedUser.tickets.length} QR codes as ZIP file for ${groupedUser.name}!`);
       
     } catch (error) {
