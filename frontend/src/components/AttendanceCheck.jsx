@@ -101,8 +101,8 @@ const AttendanceCheck = () => {
 
     return (
         <div className="attendance-check">
-            <div className="attendance-header">
-                <h1>Attendance Management</h1>
+            <div className="flex justify-between items-center attendance-header">
+                <h1 className="text-2xl font-bold">Attendance Management</h1>
                 <button onClick={handleRefresh} className="refresh-btn">
                     🔄 Refresh Data
                 </button>
@@ -212,16 +212,13 @@ const AttendanceCheck = () => {
                 }
 
                 .attendance-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
                     margin-bottom: 30px;
                     padding-bottom: 15px;
                     border-bottom: 2px solid #e0e0e0;
                 }
 
                 .attendance-header h1 {
-                    color: #333;
+                    color: rgba(51, 51, 51, 1);
                     margin: 0;
                 }
 

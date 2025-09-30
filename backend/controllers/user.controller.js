@@ -50,19 +50,29 @@ export const registerUser = async (req, res) => {
 
         const usedIds = existingUsers.map(user => user.id);
 
-        let availableIds = Array.from({ length: 999999 }, (_, i) => i + 100000)
-            .filter(id => !usedIds.includes(id));
-
-        if (availableIds.length < quantity) {
+        // Check if we have enough available IDs (rough check)
+        const totalPossibleIds = 999999 - 100000 + 1; // 900,000 total IDs
+        if (usedIds.length + quantity > totalPossibleIds) {
             await transaction.rollback();
             return res.status(400).json({ message: "Not enough IDs available" });
         }
 
         const createdTickets = [];
+        const usedIdsSet = new Set(usedIds); // Convert to Set for faster lookup
         
-        // Create multiple tickets
+        // Generate random IDs and check for duplicates
+        const generateRandomId = () => {
+            let randomId;
+            do {
+                randomId = Math.floor(Math.random() * 900000) + 100000; // Random number between 100000-999999
+            } while (usedIdsSet.has(randomId));
+            usedIdsSet.add(randomId); // Add to set to avoid duplicates in this batch
+            return randomId;
+        };
+        
+        // Create multiple tickets with random IDs
         for (let i = 0; i < quantity; i++) {
-            const userId = availableIds[i];
+            const userId = generateRandomId();
             const qrCode = `${userId}-${event.code}`;
             const ticketName = quantity > 1 ? `${name} (Ticket ${i + 1})` : name;
             
