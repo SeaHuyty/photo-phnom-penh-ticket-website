@@ -1,10 +1,21 @@
 {
   "name": "backend",
   "version": "1.0.0",
+  "author": {
+    "name": "Sea Huyty"
+  },
   "main": "server.js",
   "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node seeders/index.js"
+  },
   "dependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
@@ -12,6 +23,9 @@
     "morgan": "^1.10.1",
     "mysql": "^2.18.1",
     "mysql2": "^3.12.0",
-    "qrcode": "^1.5.4"
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "qrcode": "^1.5.4",
+    "sequelize": "^6.37.7"
   }
 }

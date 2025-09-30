@@ -1,72 +1,148 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import axios from "axios";
+import CryptoJS from "crypto-js";
+
+// QR Code Security Functions (should match AdminNewPage.jsx)
+const QR_SECRET_KEY = "phnom-penh-festival-qr-secret-2024"; // Should match backend
+
+const decodeHashedQR = (hashedData) => {
+  // Since HMAC is one-way, we send the hashed data to backend
+  // Backend will hash original QR codes and compare with this hash
+  return hashedData;
+};
 
 function ScanQr() {
   const [scanResult, setScanResult] = useState(null);
   const [verificationMessage, setVerificationMessage] = useState(null);
-  const [isScanning, setIsScanning] = useState(true); // To control continuous scanning
+  const [isScanning, setIsScanning] = useState(false); // Start with scanning disabled
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState(localStorage.getItem('selectedEventId') || '');
+  const [isConfiguring, setIsConfiguring] = useState(true);
+  const scannerRef = useRef(null);
 
+  // Fetch events on component mount
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("reader", {
-      qrbox: 500, // Size of the scanning area
-      fps: 5, // Frames per second for scanning
-    });
+    fetchEvents();
+  }, []);
 
-    if (isScanning) {
-      // Render the scanner with success and error callbacks
+  // Scanner effect
+  useEffect(() => {
+    if (isScanning && !scannerRef.current) {
+      // Only create scanner if we're scanning and don't have one already
+      const scanner = new Html5QrcodeScanner("reader", {
+        qrbox: 500,
+        fps: 5,
+      });
+      
+      scannerRef.current = scanner;
       scanner.render(handleScanSuccess, handleScanError);
-    } else {
-      scanner.clear(); // Stop scanning
     }
 
     return () => {
-      scanner.clear();
+      // Clean up scanner when component unmounts or when stopping
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(err => console.error("Error clearing scanner:", err));
+        scannerRef.current = null;
+      }
     };
   }, [isScanning]);
 
+  // Fetch available events
+  async function fetchEvents() {
+    try {
+      const response = await axios.get("http://localhost:3000/api/events");
+      setEvents(response.data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setVerificationMessage("Error loading events");
+    }
+  }
+
   // Handle successful scan
   function handleScanSuccess(result) {
-    const qrCode = result; // Assuming the QR code content itself is the result
+    const qrCode = result;
     setScanResult(qrCode);
-    sendToServer(qrCode); // Send QR code to the server for verification
+    
+    // Stop scanning immediately to prevent multiple scans
+    setIsScanning(false);
+    
+    // Clear the scanner
+    if (scannerRef.current) {
+      scannerRef.current.clear().catch(err => console.error("Error clearing scanner:", err));
+      scannerRef.current = null;
+    }
+    
+    // Send to server
+    sendToServer(qrCode);
   }
 
   // Handle scan errors
   function handleScanError(err) {
-    console.warn("Scan error:", err);
+    // Only log warnings, don't spam the console
+    if (err && !err.includes("No MultiFormat Readers")) {
+      console.warn("Scan error:", err);
+    }
   }
 
   // Function to play sound feedback
   function playBeep() {
-    const beep = new Audio("/beep.mp3"); // Ensure you have the sound file
+    const beep = new Audio("/beep.mp3");
     beep.play();
   }
 
   // Function to display error sound feedback
   function playErrorBeep() {
-    const beep = new Audio("/errorNotBeep.mp3"); // Ensure you have the sound file
+    const beep = new Audio("/errorNotBeep.mp3");
     beep.play();
   }
 
-  // In ScanQr.jsx, send the QR code content to the server instead of userId
-  async function sendToServer(qrCode) {
+  // Handle event selection
+  function handleEventSelect(eventId) {
+    setSelectedEventId(eventId);
+    localStorage.setItem('selectedEventId', eventId);
+  }
+
+  // Start scanning with selected event
+  function startScanning() {
+    if (!selectedEventId) {
+      setVerificationMessage("Please select an event first");
+      return;
+    }
+    setIsConfiguring(false);
+    setIsScanning(true);
+    setVerificationMessage(null);
+  }
+
+  // Go back to configuration
+  function goBackToConfig() {
+    setIsScanning(false);
+    setIsConfiguring(true);
+    setScanResult(null);
+    setVerificationMessage(null);
+  }
+
+  // In ScanQr.jsx, send the hashed QR code content to the server
+  async function sendToServer(scannedQRCode) {
     try {
-        const response = await axios.post("http://localhost:3000/api/verify", { qrCode });
+        // The scanned QR code is already hashed, so we send it as is
+        const decodedQR = decodeHashedQR(scannedQRCode);
+        
+        const response = await axios.post("http://localhost:3000/api/verify", { 
+          qrCode: decodedQR,
+          isHashed: true, // Flag to let backend know this is a hashed QR code
+          selectedEventId: selectedEventId // Include selected event for validation
+        });
         setVerificationMessage(response.data.message);
 
-        if (response.data.message === "QR Code already used") {
-            // Handle used QR code logic if necessary
+        if (response.data.message === "QR Code already used" || response.data.message.includes("Wrong event")) {
             playErrorBeep();
         } else {
-            playBeep(); // Play sound when verified
+            playBeep();
         }
-
-        // Stop scanning after result is obtained
-        setIsScanning(false);
     } catch (error) {
         setVerificationMessage(error.response?.data?.message || "Verification failed");
-        setIsScanning(false); // Stop scanning on error
+        playErrorBeep();
     }
   }
 
@@ -74,38 +150,171 @@ function ScanQr() {
   function resetScan() {
     setScanResult(null);
     setVerificationMessage(null);
-    setIsScanning(true); // Restart the scanning process
+    
+    // Clear the scanner div content before restarting
+    const readerElement = document.getElementById("reader");
+    if (readerElement) {
+      readerElement.innerHTML = "";
+    }
+    
+    // Restart scanning
+    setIsScanning(true);
   }
 
   return (
     <div>
       <h1>QR Code Scanner</h1>
 
-      {/* Scanner container */}
-      <div
-        id="reader"
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "inline-block",
-        }}
-      ></div>
+      {/* Event Configuration */}
+      {isConfiguring && (
+        <div style={styles.configContainer}>
+          <h2>Scanner Configuration</h2>
+          <p>Select the event you want to scan tickets for:</p>
+          
+          <div style={styles.eventSelection}>
+            {events.map((event) => (
+              <div key={event.id} style={styles.eventOption}>
+                <label style={styles.eventLabel}>
+                  <input
+                    type="radio"
+                    name="event"
+                    value={event.id}
+                    checked={selectedEventId == event.id}
+                    onChange={(e) => handleEventSelect(e.target.value)}
+                    style={styles.radio}
+                  />
+                  <span style={styles.eventName}>{event.name}</span>
+                  <span style={styles.eventCode}>({event.code})</span>
+                </label>
+              </div>
+            ))}
+          </div>
 
-      {/* Pop-up for status */}
-      {scanResult && (
-        <div style={styles.popup}>
-          <h2>Status: {verificationMessage || "Scanning..."}</h2>
-          <button onClick={resetScan} style={styles.button}>
-            Reset Scan
-          </button>
+          <div style={styles.buttonContainer}>
+            <button 
+              onClick={startScanning} 
+              disabled={!selectedEventId}
+              style={{
+                ...styles.button,
+                backgroundColor: selectedEventId ? '#4CAF50' : '#cccccc',
+                cursor: selectedEventId ? 'pointer' : 'not-allowed'
+              }}
+            >
+              Start Scanning
+            </button>
+          </div>
+
+          {verificationMessage && (
+            <div style={styles.errorMessage}>
+              {verificationMessage}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Scanner View */}
+      {!isConfiguring && (
+        <div>
+          <div style={styles.scannerHeader}>
+            <h2>Scanning for: {events.find(e => e.id == selectedEventId)?.name}</h2>
+            <button onClick={goBackToConfig} style={styles.configButton} className="cursor-pointer bg-[#bc2649] text-white hover:bg-[#a61e3a]">
+              ⚙️ Configure Scanner
+            </button>
+          </div>
+
+          {/* Scanner container */}
+          <div
+            id="reader"
+            style={{
+              width: "100%",
+              height: "400px",
+              display: "inline-block",
+            }}
+          ></div>
+
+          {/* Pop-up for status */}
+          {scanResult && (
+            <div style={styles.popup}>
+              <h2>Status: {verificationMessage || "Scanning..."}</h2>
+              <button onClick={resetScan} style={styles.button}>
+                Scan Next
+              </button>
+              <button onClick={goBackToConfig} style={{...styles.button, marginLeft: '10px'}}>
+                Configure
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// Styles for the pop-up
+// Styles for the components
 const styles = {
+  configContainer: {
+    backgroundColor: "white",
+    padding: "30px",
+    borderRadius: "10px",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    maxWidth: "600px",
+    margin: "20px auto",
+    textAlign: "center",
+  },
+  eventSelection: {
+    margin: "20px 0",
+    textAlign: "left",
+  },
+  eventOption: {
+    margin: "10px 0",
+    padding: "10px",
+    border: "1px solid #ddd",
+    borderRadius: "5px",
+    backgroundColor: "#f9f9f9",
+  },
+  eventLabel: {
+    display: "flex",
+    alignItems: "center",
+    cursor: "pointer",
+    fontSize: "16px",
+  },
+  radio: {
+    marginRight: "10px",
+    transform: "scale(1.2)",
+  },
+  eventName: {
+    fontWeight: "bold",
+    marginRight: "10px",
+  },
+  eventCode: {
+    color: "#666",
+    fontSize: "14px",
+  },
+  buttonContainer: {
+    marginTop: "20px",
+  },
+  scannerHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "10px 20px",
+    backgroundColor: "#f8f9fa",
+    borderRadius: "5px",
+    margin: "10px 0",
+  },
+  configButton: {
+    padding: "8px 16px",
+    fontSize: "14px",
+    border: "none",
+    borderRadius: "5px",
+  },
+  errorMessage: {
+    color: "red",
+    marginTop: "10px",
+    padding: "10px",
+    backgroundColor: "#ffe6e6",
+    borderRadius: "5px",
+  },
   popup: {
     position: "absolute",
     top: "50%",
@@ -117,6 +326,7 @@ const styles = {
     borderRadius: "5px",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
     zIndex: 1000,
+    textAlign: "center",
   },
   button: {
     padding: "10px 20px",

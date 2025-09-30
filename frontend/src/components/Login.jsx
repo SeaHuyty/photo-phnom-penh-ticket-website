@@ -20,7 +20,7 @@ const Login = () => {
             if (!response.ok) throw new Error("Login failed");
     
             const data = await response.json();
-            localStorage.setItem("token", data.token);
+            localStorage.setItem("adminToken", data.token);
             navigate("/admin"); // Redirect on success
         } catch (error) {
             console.error("Login error:", error);
