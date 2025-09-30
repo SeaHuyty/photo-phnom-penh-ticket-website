@@ -110,10 +110,14 @@ export const registerUser = async (req, res) => {
 };
 
 export const verifyQrCode = async (req, res) => {
-    let { qrCode, isHashed } = req.body;
+    let { qrCode, isHashed, selectedEventId } = req.body;
 
     if (!qrCode) {
         return res.status(400).json({ message: "QR Code is required" });
+    }
+
+    if (!selectedEventId) {
+        return res.status(400).json({ message: "Please select an event to scan for" });
     }
 
     qrCode = qrCode.toString().trim();
@@ -145,6 +149,13 @@ export const verifyQrCode = async (req, res) => {
 
         if (!user) {
             return res.status(400).json({ message: "Invalid QR Code" });
+        }
+
+        // Check if the ticket belongs to the selected event
+        if (user.eventId !== parseInt(selectedEventId)) {
+            return res.status(400).json({ 
+                message: `❌ Wrong event! This ticket is for "${user.event.name}", but you're scanning for a different event.` 
+            });
         }
 
         if (user.used) {

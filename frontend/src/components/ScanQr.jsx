@@ -15,9 +15,18 @@ const decodeHashedQR = (hashedData) => {
 function ScanQr() {
   const [scanResult, setScanResult] = useState(null);
   const [verificationMessage, setVerificationMessage] = useState(null);
-  const [isScanning, setIsScanning] = useState(true);
+  const [isScanning, setIsScanning] = useState(false); // Start with scanning disabled
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState(localStorage.getItem('selectedEventId') || '');
+  const [isConfiguring, setIsConfiguring] = useState(true);
   const scannerRef = useRef(null);
 
+  // Fetch events on component mount
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  // Scanner effect
   useEffect(() => {
     if (isScanning && !scannerRef.current) {
       // Only create scanner if we're scanning and don't have one already
@@ -38,6 +47,17 @@ function ScanQr() {
       }
     };
   }, [isScanning]);
+
+  // Fetch available events
+  async function fetchEvents() {
+    try {
+      const response = await axios.get("http://localhost:3000/api/events");
+      setEvents(response.data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setVerificationMessage("Error loading events");
+    }
+  }
 
   // Handle successful scan
   function handleScanSuccess(result) {
@@ -77,6 +97,31 @@ function ScanQr() {
     beep.play();
   }
 
+  // Handle event selection
+  function handleEventSelect(eventId) {
+    setSelectedEventId(eventId);
+    localStorage.setItem('selectedEventId', eventId);
+  }
+
+  // Start scanning with selected event
+  function startScanning() {
+    if (!selectedEventId) {
+      setVerificationMessage("Please select an event first");
+      return;
+    }
+    setIsConfiguring(false);
+    setIsScanning(true);
+    setVerificationMessage(null);
+  }
+
+  // Go back to configuration
+  function goBackToConfig() {
+    setIsScanning(false);
+    setIsConfiguring(true);
+    setScanResult(null);
+    setVerificationMessage(null);
+  }
+
   // In ScanQr.jsx, send the hashed QR code content to the server
   async function sendToServer(scannedQRCode) {
     try {
@@ -85,11 +130,12 @@ function ScanQr() {
         
         const response = await axios.post("http://localhost:3000/api/verify", { 
           qrCode: decodedQR,
-          isHashed: true // Flag to let backend know this is a hashed QR code
+          isHashed: true, // Flag to let backend know this is a hashed QR code
+          selectedEventId: selectedEventId // Include selected event for validation
         });
         setVerificationMessage(response.data.message);
 
-        if (response.data.message === "QR Code already used") {
+        if (response.data.message === "QR Code already used" || response.data.message.includes("Wrong event")) {
             playErrorBeep();
         } else {
             playBeep();
@@ -119,31 +165,156 @@ function ScanQr() {
     <div>
       <h1>QR Code Scanner</h1>
 
-      {/* Scanner container */}
-      <div
-        id="reader"
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "inline-block",
-        }}
-      ></div>
+      {/* Event Configuration */}
+      {isConfiguring && (
+        <div style={styles.configContainer}>
+          <h2>Scanner Configuration</h2>
+          <p>Select the event you want to scan tickets for:</p>
+          
+          <div style={styles.eventSelection}>
+            {events.map((event) => (
+              <div key={event.id} style={styles.eventOption}>
+                <label style={styles.eventLabel}>
+                  <input
+                    type="radio"
+                    name="event"
+                    value={event.id}
+                    checked={selectedEventId == event.id}
+                    onChange={(e) => handleEventSelect(e.target.value)}
+                    style={styles.radio}
+                  />
+                  <span style={styles.eventName}>{event.name}</span>
+                  <span style={styles.eventCode}>({event.code})</span>
+                </label>
+              </div>
+            ))}
+          </div>
 
-      {/* Pop-up for status */}
-      {scanResult && (
-        <div style={styles.popup}>
-          <h2>Status: {verificationMessage || "Scanning..."}</h2>
-          <button onClick={resetScan} style={styles.button}>
-            Reset Scan
-          </button>
+          <div style={styles.buttonContainer}>
+            <button 
+              onClick={startScanning} 
+              disabled={!selectedEventId}
+              style={{
+                ...styles.button,
+                backgroundColor: selectedEventId ? '#4CAF50' : '#cccccc',
+                cursor: selectedEventId ? 'pointer' : 'not-allowed'
+              }}
+            >
+              Start Scanning
+            </button>
+          </div>
+
+          {verificationMessage && (
+            <div style={styles.errorMessage}>
+              {verificationMessage}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Scanner View */}
+      {!isConfiguring && (
+        <div>
+          <div style={styles.scannerHeader}>
+            <h2>Scanning for: {events.find(e => e.id == selectedEventId)?.name}</h2>
+            <button onClick={goBackToConfig} style={styles.configButton} className="cursor-pointer bg-[#bc2649] text-white hover:bg-[#a61e3a]">
+              ⚙️ Configure Scanner
+            </button>
+          </div>
+
+          {/* Scanner container */}
+          <div
+            id="reader"
+            style={{
+              width: "100%",
+              height: "400px",
+              display: "inline-block",
+            }}
+          ></div>
+
+          {/* Pop-up for status */}
+          {scanResult && (
+            <div style={styles.popup}>
+              <h2>Status: {verificationMessage || "Scanning..."}</h2>
+              <button onClick={resetScan} style={styles.button}>
+                Scan Next
+              </button>
+              <button onClick={goBackToConfig} style={{...styles.button, marginLeft: '10px'}}>
+                Configure
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// Styles for the pop-up
+// Styles for the components
 const styles = {
+  configContainer: {
+    backgroundColor: "white",
+    padding: "30px",
+    borderRadius: "10px",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    maxWidth: "600px",
+    margin: "20px auto",
+    textAlign: "center",
+  },
+  eventSelection: {
+    margin: "20px 0",
+    textAlign: "left",
+  },
+  eventOption: {
+    margin: "10px 0",
+    padding: "10px",
+    border: "1px solid #ddd",
+    borderRadius: "5px",
+    backgroundColor: "#f9f9f9",
+  },
+  eventLabel: {
+    display: "flex",
+    alignItems: "center",
+    cursor: "pointer",
+    fontSize: "16px",
+  },
+  radio: {
+    marginRight: "10px",
+    transform: "scale(1.2)",
+  },
+  eventName: {
+    fontWeight: "bold",
+    marginRight: "10px",
+  },
+  eventCode: {
+    color: "#666",
+    fontSize: "14px",
+  },
+  buttonContainer: {
+    marginTop: "20px",
+  },
+  scannerHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "10px 20px",
+    backgroundColor: "#f8f9fa",
+    borderRadius: "5px",
+    margin: "10px 0",
+  },
+  configButton: {
+    padding: "8px 16px",
+    fontSize: "14px",
+    border: "none",
+    borderRadius: "5px",
+  },
+  errorMessage: {
+    color: "red",
+    marginTop: "10px",
+    padding: "10px",
+    backgroundColor: "#ffe6e6",
+    borderRadius: "5px",
+  },
   popup: {
     position: "absolute",
     top: "50%",
@@ -155,6 +326,7 @@ const styles = {
     borderRadius: "5px",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
     zIndex: 1000,
+    textAlign: "center",
   },
   button: {
     padding: "10px 20px",
