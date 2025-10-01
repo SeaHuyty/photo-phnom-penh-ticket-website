@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import axios from "axios";
-import CryptoJS from "crypto-js";
 
-// QR Code Security Functions (should match AdminNewPage.jsx)
-const QR_SECRET_KEY = "phnom-penh-festival-qr-secret-2024"; // Should match backend
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const decodeHashedQR = (hashedData) => {
   // Since HMAC is one-way, we send the hashed data to backend
@@ -51,7 +49,7 @@ function ScanQr() {
   // Fetch available events
   async function fetchEvents() {
     try {
-      const response = await axios.get("http://localhost:3000/api/events");
+      const response = await axios.get(`${BASE_URL}/events`);
       setEvents(response.data);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -127,8 +125,8 @@ function ScanQr() {
     try {
         // The scanned QR code is already hashed, so we send it as is
         const decodedQR = decodeHashedQR(scannedQRCode);
-        
-        const response = await axios.post("http://localhost:3000/api/verify", { 
+
+        const response = await axios.post(`${BASE_URL}/verify`, {
           qrCode: decodedQR,
           isHashed: true, // Flag to let backend know this is a hashed QR code
           selectedEventId: selectedEventId // Include selected event for validation
@@ -163,7 +161,7 @@ function ScanQr() {
 
   return (
     <div>
-      <h1>QR Code Scanner</h1>
+      <h1 className="text-2xl font-bold text-gray-700">QR Code Scanner</h1>
 
       {/* Event Configuration */}
       {isConfiguring && (
@@ -184,7 +182,6 @@ function ScanQr() {
                     style={styles.radio}
                   />
                   <span style={styles.eventName}>{event.name}</span>
-                  <span style={styles.eventCode}>({event.code})</span>
                 </label>
               </div>
             ))}

@@ -19,30 +19,30 @@ function BankQRCode() {
   };
 
   return (
-    <div style={styles.container}>
-      <h1>Pay via this QR Code</h1>
-      <div style={styles.qrContainer}>
+    <div className="text-center p-5 flex flex-col items-center">
+      <h1 className="text-white">Pay via this QR Code</h1>
+      <div className="flex justify-center items-center pt-5">
         <img 
           src="/image.png"  // Replace with the actual path to your bank QR code image
           alt="Bank QR Code"
-          style={styles.qrImage}
+          className="w-[450px] h-[450px]"
         />
       </div>
 
-      <div style={styles.checkboxContainer}>
+      <div className="mt-5 flex items-center justify-center text-1xl">
         <input
           type="checkbox" 
           checked={isChecked} 
           onChange={handleCheckboxChange} 
           id="payment-verification"
-          style={styles.checkbox} 
+          className="rounded-lg mr-3 cursor-pointer scale-200"
         />
         <label htmlFor="payment-verification">I have paid for the ticket.</label>
       </div>
 
       <button 
         onClick={handleDoneClick} 
-        style={styles.doneButton}
+        className="bg-[#BC2649] text-white font-semibold hover:bg-[#BC2649]/80 cursor-pointer transform duration-200 hover:scale-103 mt-5 px-6 py-2 rounded-lg"
         disabled={!isChecked}  // Disable the button if checkbox is not checked
       >
         Done
@@ -50,48 +50,5 @@ function BankQRCode() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    textAlign: "center",
-    padding: "20px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    color: "white",
-  },
-  qrContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: "20px",
-  },
-  qrImage: {
-    width: "450px", // Adjust the size of your QR code image
-    height: "450px",
-  },
-  checkboxContainer: {
-    marginTop: "20px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    fontSize: "25px",
-  },
-  checkbox: {
-    transform: "scale(2)", // Make the checkbox bigger
-    borderStyle: "none",
-    borderRadius: "25px",
-    marginRight: "15px",  
-    cursor: "pointer",
-  },
-  doneButton: {
-    borderRadius: "5px",
-    borderStyle: "none",
-    marginTop: "20px",
-    padding: "10px 50px",
-    fontSize: "16px",
-    cursor: "pointer",
-  },
-};
 
 export default BankQRCode;

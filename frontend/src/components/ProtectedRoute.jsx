@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ProtectedRoute = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const response = await fetch('http://localhost:3000/api/admin/check-auth', {
+                const response = await fetch(`${BASE_URL}/admin/check-auth`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,  // Make sure token is in localStorage
