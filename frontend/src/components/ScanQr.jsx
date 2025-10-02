@@ -181,7 +181,7 @@ function ScanQr() {
                     onChange={(e) => handleEventSelect(e.target.value)}
                     style={styles.radio}
                   />
-                  <span style={styles.eventName}>{event.name}</span>
+                  <span className="font-medium text-gray-800">{event.name}</span>
                 </label>
               </div>
             ))}
