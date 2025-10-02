@@ -7,9 +7,9 @@ import QRCode from "qrcode";
 import CryptoJS from "crypto-js";
 
 // QR Code Security Functions
-const QR_SECRET_KEY = "phnom-penh-festival-qr-secret-2024"; // Should match backend
+const QR_SECRET_KEY = import.meta.env.VITE_QR_SECRET_KEY;
 
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const hashQRData = (originalData) => {
   try {
@@ -28,7 +28,6 @@ function AdminNewPage() {
   const [groupedUsers, setGroupedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState("all");
-  const [eventCounts, setEventCounts] = useState({});
   const [eventsMap, setEventsMap] = useState({});
   const [events, setEvents] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -68,7 +67,6 @@ function AdminNewPage() {
           eventsMapping[eventId] = eventName;
         });
         
-        setEventCounts(counts);
         setEventsMap(eventsMapping);
         
         // Group users by purchaser email
@@ -137,8 +135,6 @@ function AdminNewPage() {
 
   const handleGenerateQRCode = async (userQrCode) => {
     try {
-      // Hash the QR code data before generating
-      const hashedQRData = hashQRData(userQrCode);
       const canvas = document.getElementById(`qrCanvas-${userQrCode}`);
       if (canvas) {
         const imageUrl = canvas.toDataURL("image/png");
@@ -284,7 +280,6 @@ function AdminNewPage() {
         eventsMapping[eventId] = eventName;
       });
       
-      setEventCounts(counts);
       setEventsMap(eventsMapping);
       
       // Update grouped users
@@ -320,7 +315,7 @@ function AdminNewPage() {
 
   if (loading) {
     return (
-      <div className="user-management-loading">
+      <div className="flex flex-col items-center justify-center px-6 py-4 h-[100vh] text-[#7f8c8d]">
         <div className="loading-spinner"></div>
         <p>Loading users...</p>
       </div>
@@ -331,32 +326,32 @@ function AdminNewPage() {
   const totalUsers = users.length;
 
   return (
-    <div className="user-management-container">
-      <div className="user-management-header">
-        <div className="header-left">
-          <h1>User Management</h1>
-          <p className="total-users">
-            Total Registered Users: <span className="count">{totalUsers}</span>
+    <div className="text-[#333333]">
+      <div className="flex justify-between items-start mb-8 pb-4 border-b-2 border-gray-200">
+        <div>
+          <h1 className="text-2xl font-bold text-[#333333]">Ticket Management</h1>
+          <p className="text-gray-500">
+            Total Registered Tickets: <span className="font-bold text-[#007bff]">{totalUsers}</span>
           </p>
         </div>
         <div className="header-right">
           <button 
-            className="create-user-btn"
+            className="bg-[#28a745] text-white font-semibold rounded cursor-pointer hover:bg-[#218838] px-4 py-2"
             onClick={() => setShowCreateModal(true)}
           >
-            + Create New User
+            + Create New Ticket
           </button>
         </div>
       </div>
 
-      <div className="filter-section">
-        <div className="filter-controls">
-          <label htmlFor="event-filter">Filter by Event:</label>
+      <div className="bg-[#f8f9fa] p-4 rounded mb-6 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <label htmlFor="event-filter" className="text-[#2c3e50] text-semibold text-sm">Filter by Event:</label>
           <select 
             id="event-filter"
             value={selectedEvent} 
             onChange={(e) => handleEventFilter(e.target.value)}
-            className="event-filter-dropdown"
+            className="px-3 py-2 border-1 border-gray-300 rounded-lg text-[#2c3e50] text-sm min-w-[200px] focus:outline-none focus:ring-1 focus:ring-[#BC2649] hover:border-[#BC2649] transition-all duration-200"
           >
             <option value="all">All Events</option>
             {uniqueEvents.map((eventId) => (
@@ -367,13 +362,13 @@ function AdminNewPage() {
           </select>
         </div>
         
-        <div className="current-filter-info">
-          <span className="filter-label">Showing:</span>
-          <span className="filter-count">{groupedUsers.length} purchasers ({filteredUsers.length} total tickets)</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[#7f8c8d] text-sm">Showing:</span>
+          <span className="bg-[#BC2649] text-white px-2 py-1 rounded-lg text-sm text-medium">{groupedUsers.length} purchasers ({filteredUsers.length} total tickets)</span>
           {selectedEvent !== "all" && (
             <button 
               onClick={() => handleEventFilter("all")} 
-              className="clear-filter-btn"
+              className="bg-[#e74c3c] text-white border-none rounded-lg cursor-pointer text-sm px-2 py-1 hover:bg-[#c0392b] transition-all duration-200 transform hover:scale-103"
             >
               Clear Filter ✕
             </button>
@@ -382,13 +377,13 @@ function AdminNewPage() {
       </div>
 
       {groupedUsers.length === 0 ? (
-        <div className="no-users-message">
-          <p>No users found for the selected filter.</p>
+        <div className="text-center text-gray-500 mt-10 px-6 py-4 bg-[#f8f9fa] rounded-lg">
+          <p className="text-sm">No users found for the selected filter.</p>
         </div>
       ) : (
-        <div className="table-container">
-          <table className="users-table">
-            <thead>
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-1 border-[#e9ecef]">
+          <table className="w-full border-collapse bg-white users-table">
+            <thead >
               <tr>
                 <th>#</th>
                 <th>Name</th>
@@ -402,26 +397,26 @@ function AdminNewPage() {
             <tbody>
               {groupedUsers.map((groupedUser, index) => (
                 <tr key={groupedUser.purchaserEmail}>
-                  <td className="row-number">{index + 1}</td>
-                  <td className="user-name">{groupedUser.name}</td>
-                  <td className="user-email">{groupedUser.email}</td>
+                  <td className="text-center text-[#7f8c8d] w-[60px] text-medium">{index + 1}</td>
+                  <td className="text-xs text-[#2c3e50] text-medium">{groupedUser.name}</td>
+                  <td className="text-[#5a6c7d] text-xs user-email">{groupedUser.email}</td>
                   <td className="user-phone">{groupedUser.phone}</td>
-                  <td className="user-event">{groupedUser.event?.name || 'Unknown Event'}</td>
-                  <td className="tickets-count">
-                    <span className="ticket-badge">
+                  <td className="text-left">{groupedUser.event?.name || 'Unknown Event'}</td>
+                  <td>
+                    <span className="inline-block bg-[#e7f3ff] text-[#0066cc] px-2 py-1 rounded-lg text-sm font-medium border-1 border-[#b3d9ff]">
                       {groupedUser.totalTickets} {groupedUser.totalTickets === 1 ? 'ticket' : 'tickets'}
                     </span>
                   </td>
                   <td className="user-actions">
                     <button
                       onClick={() => handleDownloadAllQRCodes(groupedUser)}
-                      className="download-qr-btn"
+                      className="bg-[#007bff] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#0069d9] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
                       title={groupedUser.totalTickets > 1 ? `Download ${groupedUser.totalTickets} QR codes` : 'Download QR code'}
                     >
                       {groupedUser.totalTickets > 1 ? 'Download All' : 'Download QR'}
                     </button>
                     {/* Hidden QR canvases for download generation */}
-                    <div className="qr-container" style={{display: 'none'}}>
+                    <div style={{display: 'none'}}>
                       {groupedUser.tickets.map((ticket) => (
                         <QRCodeCanvas
                           key={ticket.id}
@@ -442,21 +437,21 @@ function AdminNewPage() {
 
       {/* Create User Modal */}
       {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Create New User</h2>
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex justify-center items-center z-1000 modal-overlay">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px] max-h-[90vh] overflow-y-hidden shadow-xl">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+              <h2 className="text-[#333333]">Create New User</h2>
               <button 
-                className="modal-close-btn"
+                className="bg-none border-none text-2xl cursor-pointer text-gray-600 hover:text-gray-900 w-8 h-8 flex items-center justify-center"
                 onClick={handleCloseModal}
               >
                 ×
               </button>
             </div>
             
-            <form onSubmit={handleCreateUser} className="create-user-form">
-              <div className="form-group">
-                <label htmlFor="name">Name *</label>
+            <form onSubmit={handleCreateUser} className="p-6">
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-1xl font-semibold text-gray-700 mb-1">Name *</label>
                 <input
                   type="text"
                   id="name"
@@ -465,11 +460,12 @@ function AdminNewPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="Enter full name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="email">Email *</label>
+              <div className="mb-4">
+                <label htmlFor="email" className="block text-1xl font-semibold text-gray-700 mb-1">Email *</label>
                 <input
                   type="email"
                   id="email"
@@ -478,11 +474,12 @@ function AdminNewPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="Enter email address"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="phone">Phone Number *</label>
+              <div className="mb-4">
+                <label htmlFor="phone" className="block text-1xl font-semibold text-gray-700 mb-1">Phone Number *</label>
                 <input
                   type="tel"
                   id="phone"
@@ -491,17 +488,19 @@ function AdminNewPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="Enter phone number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="eventId">Event *</label>
+              <div className="mb-4">
+                <label htmlFor="eventId" className="block text-1xl font-semibold text-gray-700 mb-1">Event *</label>
                 <select
                   id="eventId"
                   name="eventId"
                   value={newUser.eventId}
                   onChange={handleInputChange}
                   required
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
                 >
                   <option value="">Select an event</option>
                   {events.map((event) => (
@@ -512,14 +511,15 @@ function AdminNewPage() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="quantity">Number of Tickets *</label>
+              <div className="mb-4">
+                <label htmlFor="quantity" className="block text-1xl font-semibold text-gray-700 mb-1">Number of Tickets *</label>
                 <select
                   id="quantity"
                   name="quantity"
                   value={newUser.quantity}
                   onChange={handleInputChange}
                   required
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
                 >
                   <option value={1}>1 Ticket</option>
                   <option value={2}>2 Tickets</option>
@@ -532,15 +532,15 @@ function AdminNewPage() {
                   <option value={9}>9 Tickets</option>
                   <option value={10}>10 Tickets</option>
                 </select>
-                <small className="form-help">
+                <small className="block mt-2 text-xs text-gray-500 italic">
                   All tickets will have the same contact information but unique QR codes
                 </small>
               </div>
 
-              <div className="modal-actions">
+              <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
-                  className="cancel-btn"
+                  className="bg-gray-500 text-white text-sm font-semibold rounded cursor-pointer hover:bg-gray-600 px-4 py-2"
                   onClick={handleCloseModal}
                   disabled={createLoading}
                 >
@@ -548,7 +548,7 @@ function AdminNewPage() {
                 </button>
                 <button
                   type="submit"
-                  className="submit-btn"
+                  className="bg-[#bc2649] text-white text-sm font-semibold rounded cursor-pointer hover:bg-[#a51e3a] px-4 py-2"
                   disabled={createLoading}
                 >
                   {createLoading ? 'Creating...' : 'Create User'}
@@ -558,216 +558,6 @@ function AdminNewPage() {
           </div>
         </div>
       )}
-
-      <style>{`
-        .user-management-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 30px;
-          padding-bottom: 15px;
-          border-bottom: 2px solid #e0e0e0;
-        }
-
-        .header-left h1 {
-          margin: 0 0 10px 0;
-          color: #333;
-        }
-
-        .header-left .total-users {
-          margin: 0;
-          color: #666;
-        }
-
-        .header-left .count {
-          font-weight: bold;
-          color: #007bff;
-        }
-
-        .create-user-btn {
-          background-color: #28a745;
-          color: white;
-          border: none;
-          padding: 12px 24px;
-          border-radius: 6px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background-color 0.3s;
-        }
-
-        .create-user-btn:hover {
-          background-color: #218838;
-        }
-
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: rgba(0, 0, 0, 0.5);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 1000;
-        }
-
-        .modal-content {
-          background: white;
-          border-radius: 8px;
-          padding: 0;
-          width: 90%;
-          max-width: 500px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px 24px;
-          border-bottom: 1px solid #e0e0e0;
-        }
-
-        .modal-header h2 {
-          margin: 0;
-          color: #333;
-        }
-
-        .modal-close-btn {
-          background: none;
-          border: none;
-          font-size: 24px;
-          cursor: pointer;
-          color: #666;
-          padding: 0;
-          width: 30px;
-          height: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .modal-close-btn:hover {
-          color: #333;
-        }
-
-        .create-user-form {
-          padding: 24px;
-        }
-
-        .form-group {
-          margin-bottom: 20px;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 6px;
-          font-weight: 600;
-          color: #333;
-        }
-
-        .form-group input,
-        .form-group select {
-          width: 100%;
-          padding: 10px 12px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 14px;
-          transition: border-color 0.3s;
-        }
-
-        .form-help {
-          display: block;
-          margin-top: 4px;
-          font-size: 12px;
-          color: #666;
-          font-style: italic;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-          outline: none;
-          border-color: #007bff;
-        }
-
-        .modal-actions {
-          display: flex;
-          gap: 12px;
-          justify-content: flex-end;
-          margin-top: 30px;
-        }
-
-        .cancel-btn {
-          background-color: #6c757d;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-        }
-
-        .cancel-btn:hover:not(:disabled) {
-          background-color: #5a6268;
-        }
-
-        .submit-btn {
-          background-color: #007bff;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 600;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-          background-color: #0056b3;
-        }
-
-        .cancel-btn:disabled,
-        .submit-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .ticket-badge {
-          display: inline-block;
-          background-color: #e7f3ff;
-          color: #0066cc;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 600;
-          border: 1px solid #b3d9ff;
-        }
-
-        .tickets-count {
-          text-align: center;
-        }
-
-        @media (max-width: 768px) {
-          .user-management-header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
-          }
-          
-          .modal-content {
-            width: 95%;
-            margin: 10px;
-          }
-          
-          .modal-actions {
-            flex-direction: column;
-          }
-        }
-      `}</style>
     </div>
   );
 }

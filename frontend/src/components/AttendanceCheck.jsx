@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Loader from "./Loader";
 
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AttendanceCheck = () => {
     const [users, setUsers] = useState([]);
-    const [filteredUsers, setFilteredUsers] = useState([]);
     const [filter, setFilter] = useState("all"); // "all", "scanned", "unscanned"
     const [events, setEvents] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState("all");
@@ -72,25 +70,21 @@ const AttendanceCheck = () => {
         fetchData();
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return "N/A";
-        return new Date(dateString).toLocaleString();
-    };
-
     if (loading) {
         return (
-            <div className="attendance-loading">
-                <Loader />
+            <div className="flex flex-col items-center justify-center px-6 py-4 h-[100vh] text-[#7f8c8d]">
+                <div className="loading-spinner"></div>
+                <p>Loading attendance...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="attendance-error">
-                <h2>Error</h2>
-                <p>{error}</p>
-                <button onClick={handleRefresh} className="refresh-btn">
+            <div className="p-10">
+                <h2 className="text-[#BC2649] text-center text-xl font-bold">Error</h2>
+                <p className="text-center text-[#7f8c8d]">{error}</p>
+                <button onClick={handleRefresh} className="bg-[#007bff] text-white px-4 py-2 rounded mt-4 hover:bg-[#0056b3] transition duration-300 cursor-pointer">
                     Try Again
                 </button>
             </div>
@@ -100,43 +94,43 @@ const AttendanceCheck = () => {
     const stats = getAttendanceStats();
 
     return (
-        <div className="attendance-check">
-            <div className="flex justify-between items-center attendance-header">
+        <div className="p-5 max-w-[1200px] mx-auto">
+            <div className="flex justify-between items-center mb-7">
                 <h1 className="text-2xl font-bold">Attendance Management</h1>
-                <button onClick={handleRefresh} className="refresh-btn">
+                <button onClick={handleRefresh} className="bg-[#007bff] text-white px-4 py-2 rounded hover:bg-[#0056b3] transition duration-300 cursor-pointer">
                     🔄 Refresh Data
                 </button>
             </div>
 
             {/* Statistics Cards */}
-            <div className="stats-container">
-                <div className="stat-card total">
-                    <h3>Total Tickets</h3>
-                    <p className="stat-number">{stats.total}</p>
+            <div className="grid grid-cols-4 gap-5 mb-6">
+                <div className="bg-white shadow-md p-5 rounded-lg text-center border-l-5 border-[#6c757d]">
+                    <h3 className="font-semibold text-[#666] text-lg">Total Tickets</h3>
+                    <p className="text-[#333] text-3xl font-semibold mt-2">{stats.total}</p>
                 </div>
-                <div className="stat-card scanned">
-                    <h3>Scanned</h3>
-                    <p className="stat-number">{stats.scanned}</p>
+                <div className="bg-white shadow-md p-5 rounded-lg text-center border-l-5 border-[#28a745]">
+                    <h3 className="font-semibold text-[#666] text-lg">Scanned</h3>
+                    <p className="text-[#333] text-3xl font-semibold mt-2">{stats.scanned}</p>
                 </div>
-                <div className="stat-card unscanned">
-                    <h3>Unscanned</h3>
-                    <p className="stat-number">{stats.unscanned}</p>
+                <div className="bg-white shadow-md p-5 rounded-lg text-center border-l-5 border-[#dc3545]">
+                    <h3 className="font-semibold text-[#666] text-lg">Unscanned</h3>
+                    <p className="text-[#333] text-3xl font-semibold mt-2">{stats.unscanned}</p>
                 </div>
-                <div className="stat-card rate">
-                    <h3>Attendance Rate</h3>
-                    <p className="stat-number">{stats.attendanceRate}%</p>
+                <div className="bg-white shadow-md p-5 rounded-lg text-center border-l-5 border-[#ffc107]">
+                    <h3 className="font-semibold text-[#666] text-lg">Attendance Rate</h3>
+                    <p className="text-[#333] text-3xl font-semibold mt-2">{stats.attendanceRate}%</p>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="filters-container">
-                <div className="filter-group">
-                    <label htmlFor="status-filter">Filter by Status:</label>
+            <div className="flex gap-5 mb-6 p-4 bg-[#f8f9fa] rounded-lg">
+                <div className="flex flex-col gap-2">
+                    <label htmlFor="status-filter" className="font-semibold text-[#333]">Filter by Status:</label>
                     <select 
                         id="status-filter"
                         value={filter} 
                         onChange={(e) => setFilter(e.target.value)}
-                        className="filter-select"
+                        className="px-3 py-2 border border-[#ddd] rounded-md focus:outline-none focus:ring-1 focus:ring-[#007bff] min-w-[150px]"
                     >
                         <option value="all">All Tickets</option>
                         <option value="scanned">Scanned Only</option>
@@ -144,13 +138,13 @@ const AttendanceCheck = () => {
                     </select>
                 </div>
 
-                <div className="filter-group">
-                    <label htmlFor="event-filter">Filter by Event:</label>
+                <div className="flex flex-col gap-2">
+                    <label htmlFor="event-filter" className="font-semibold text-[#333]">Filter by Event:</label>
                     <select 
                         id="event-filter"
                         value={selectedEvent} 
                         onChange={(e) => setSelectedEvent(e.target.value)}
-                        className="filter-select"
+                        className="px-3 py-2 border border-[#ddd] rounded-md focus:outline-none focus:ring-1 focus:ring-[#007bff] min-w-[150px]"
                     >
                         <option value="all">All Events</option>
                         {events.map(event => (
@@ -163,39 +157,37 @@ const AttendanceCheck = () => {
             </div>
 
             {/* Users Table */}
-            <div className="users-table-container">
-                <table className="users-table">
-                    <thead>
+            <div className="overflow-x-auto bg-white rounded-lg shadow-md">
+                <table className="w-[100%] border-collapse users-table">
+                    <thead className="bg-[#f8f9fa]">
                         <tr>
-                            <th>ID</th>
+                            <th className="w-[60px]">ID</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Event</th>
-                            <th>QR Code</th>
-                            <th>Status</th>
+                            <th className="w-[150px]">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {users.length > 0 ? (
                             users.map(user => (
-                                <tr key={user.id} className={user.used ? 'scanned-row' : 'unscanned-row'}>
+                                <tr key={user.id}>
                                     <td>{user.id}</td>
                                     <td>{user.name}</td>
                                     <td>{user.email}</td>
                                     <td>{user.phone}</td>
                                     <td>{user.event ? user.event.name : 'N/A'}</td>
-                                    <td className="qr-code">{user.qrCode}</td>
                                     <td>
-                                        <span className={`status-badge ${user.used ? 'scanned' : 'unscanned'}`}>
-                                            {user.used ? '✅ Scanned' : '⏳ Unscanned'}
+                                        <span className={`px-2 py-1 rounded-2xl font-semibold ${user.used ? 'bg-[#d4edda] text-[#155724]' : 'bg-[#fff3cd] text-[#856404]'}`}>
+                                            {user.used ? 'Scanned' : 'Unscanned'}
                                         </span>
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="7" className="no-data">
+                                <td colSpan="6" className="text-center text-[#666] p-10 text-italic">
                                     No tickets found with the selected filters
                                 </td>
                             </tr>
@@ -205,128 +197,6 @@ const AttendanceCheck = () => {
             </div>
 
             <style jsx>{`
-                .attendance-check {
-                    padding: 20px;
-                    max-width: 1200px;
-                    margin: 0 auto;
-                }
-
-                .attendance-header {
-                    margin-bottom: 30px;
-                    padding-bottom: 15px;
-                    border-bottom: 2px solid #e0e0e0;
-                }
-
-                .attendance-header h1 {
-                    color: rgba(51, 51, 51, 1);
-                    margin: 0;
-                }
-
-                .refresh-btn {
-                    background-color: #007bff;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    transition: background-color 0.3s;
-                }
-
-                .refresh-btn:hover {
-                    background-color: #0056b3;
-                }
-
-                .stats-container {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 20px;
-                    margin-bottom: 30px;
-                }
-
-                .stat-card {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    text-align: center;
-                    border-left: 4px solid;
-                }
-
-                .stat-card.total {
-                    border-left-color: #6c757d;
-                }
-
-                .stat-card.scanned {
-                    border-left-color: #28a745;
-                }
-
-                .stat-card.unscanned {
-                    border-left-color: #ffc107;
-                }
-
-                .stat-card.rate {
-                    border-left-color: #17a2b8;
-                }
-
-                .stat-card h3 {
-                    margin: 0 0 10px 0;
-                    color: #666;
-                    font-size: 14px;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-
-                .stat-number {
-                    margin: 0;
-                    font-size: 32px;
-                    font-weight: bold;
-                    color: #333;
-                }
-
-                .filters-container {
-                    display: flex;
-                    gap: 20px;
-                    margin-bottom: 30px;
-                    padding: 20px;
-                    background-color: #f8f9fa;
-                    border-radius: 8px;
-                }
-
-                .filter-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 5px;
-                }
-
-                .filter-group label {
-                    font-weight: bold;
-                    color: #333;
-                    font-size: 14px;
-                }
-
-                .filter-select {
-                    padding: 8px 12px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    font-size: 14px;
-                    background-color: white;
-                    min-width: 150px;
-                }
-
-                .users-table-container {
-                    overflow-x: auto;
-                    background: white;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-
-                .users-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 14px;
-                }
-
                 .users-table th,
                 .users-table td {
                     padding: 12px;
@@ -341,72 +211,6 @@ const AttendanceCheck = () => {
                     position: sticky;
                     top: 0;
                     z-index: 1;
-                }
-
-                .scanned-row {
-                    background-color: #f8fff8;
-                }
-
-                .unscanned-row {
-                    background-color: #fffcf0;
-                }
-
-                .qr-code {
-                    font-family: monospace;
-                    font-size: 12px;
-                    max-width: 120px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .status-badge {
-                    padding: 4px 8px;
-                    border-radius: 12px;
-                    font-size: 12px;
-                    font-weight: bold;
-                }
-
-                .status-badge.scanned {
-                    background-color: #d4edda;
-                    color: #155724;
-                }
-
-                .status-badge.unscanned {
-                    background-color: #fff3cd;
-                    color: #856404;
-                }
-
-                .no-data {
-                    text-align: center;
-                    color: #666;
-                    font-style: italic;
-                    padding: 40px;
-                }
-
-                .attendance-loading,
-                .attendance-error {
-                    text-align: center;
-                    padding: 40px;
-                }
-
-                .attendance-error {
-                    color: #dc3545;
-                }
-
-                @media (max-width: 768px) {
-                    .filters-container {
-                        flex-direction: column;
-                    }
-                    
-                    .attendance-header {
-                        flex-direction: column;
-                        gap: 15px;
-                        align-items: flex-start;
-                    }
-                    
-                    .stats-container {
-                        grid-template-columns: repeat(2, 1fr);
-                    }
                 }
             `}</style>
         </div>

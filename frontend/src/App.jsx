@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import EventSelection from "./components/EventSelection";
 import CreateQr from "./components/CreateQr";
-import BankQRCode from "./components/BankQrCode";
+import BankQRCode from "./components/BankQRCode";
 import ThankYou from "./components/ThankYou";
 import Login from "./components/Login";
 import AdminSidebar from "./components/AdminSidebar";
@@ -39,11 +39,11 @@ const AppContent = () => {
   }
 
   return (
-    <div className="container">
+    <div className="h-[100vh] bg-white px-10">
       {/* nav bar */}
-      <nav className="navbar"> 
-        <h1>Photo Phnom Penh</h1>
-        <ul>
+      <nav className="flex justify-between items-center p-5"> 
+        <h1 className="text-bold text-2xl">Photo Phnom Penh</h1>
+        <ul className="flex justify-center items-center gap-[50px] list-none">
           <li><a href="#">Home</a></li>
           <li><a href="#">About</a></li>
           <li><a href="#">Service</a></li>
@@ -52,7 +52,7 @@ const AppContent = () => {
           </div>
         </ul>
       </nav>
-      <div className="app">
+      <div className="p-7 bg-[#BC2649] rounded-lg">
         <Routes>
           <Route path="/" element={<EventSelection />} />
           <Route path="/create-qr/:eventId" element={<CreateQr />} />
@@ -61,7 +61,7 @@ const AppContent = () => {
           <Route path="/login" element={<Login />} />
         </Routes>
       </div>
-      <footer>
+      <footer className="text-center p-7">
         <p>&copy; 2024 Photo-Phnom-Penh</p>
       </footer>
     </div>
