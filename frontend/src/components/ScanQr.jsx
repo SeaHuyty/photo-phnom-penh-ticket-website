@@ -165,21 +165,21 @@ function ScanQr() {
 
       {/* Event Configuration */}
       {isConfiguring && (
-        <div style={styles.configContainer}>
-          <h2>Scanner Configuration</h2>
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-[600px] my-5 mx-auto text-center">
+          <h2 className="text-xl font-semibold text-gray-800 mb-3">Scanner Configuration</h2>
           <p>Select the event you want to scan tickets for:</p>
           
-          <div style={styles.eventSelection}>
+          <div className="mt-6">
             {events.map((event) => (
-              <div key={event.id} style={styles.eventOption}>
-                <label style={styles.eventLabel}>
+              <div key={event.id} className="border border-[#ddd] p-4 rounded-lg mb-4 hover:shadow-md transition duration-300 cursor-pointer">
+                <label className="flex items-center cursor-pointer">
                   <input
                     type="radio"
                     name="event"
                     value={event.id}
                     checked={selectedEventId == event.id}
                     onChange={(e) => handleEventSelect(e.target.value)}
-                    style={styles.radio}
+                    className="mr-2 transform scale-125 cursor-pointer"
                   />
                   <span className="font-medium text-gray-800">{event.name}</span>
                 </label>
@@ -187,22 +187,18 @@ function ScanQr() {
             ))}
           </div>
 
-          <div style={styles.buttonContainer}>
+          <div className="mt-4">
             <button 
               onClick={startScanning} 
               disabled={!selectedEventId}
-              style={{
-                ...styles.button,
-                backgroundColor: selectedEventId ? '#4CAF50' : '#cccccc',
-                cursor: selectedEventId ? 'pointer' : 'not-allowed'
-              }}
+              className={`mt-4 px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 ${selectedEventId ? 'bg-[#4CAF50]' : 'bg-[#cccccc] cursor-not-allowed'}`}
             >
               Start Scanning
             </button>
           </div>
 
           {verificationMessage && (
-            <div style={styles.errorMessage}>
+            <div className="mt-4 p-4 bg-red-100 text-red-800 border border-red-300 rounded">
               {verificationMessage}
             </div>
           )}
@@ -212,9 +208,9 @@ function ScanQr() {
       {/* Scanner View */}
       {!isConfiguring && (
         <div>
-          <div style={styles.scannerHeader}>
+          <div className="flex justify-between items-center px-4 py-2 bg-gray-200 rounded shadow mx-auto mt-5">
             <h2>Scanning for: {events.find(e => e.id == selectedEventId)?.name}</h2>
-            <button onClick={goBackToConfig} style={styles.configButton} className="cursor-pointer bg-[#bc2649] text-white hover:bg-[#a61e3a]">
+            <button onClick={goBackToConfig} className="cursor-pointer bg-[#bc2649] text-white hover:bg-[#a61e3a] px-4 py-2 rounded">
               ⚙️ Configure Scanner
             </button>
           </div>
@@ -222,21 +218,17 @@ function ScanQr() {
           {/* Scanner container */}
           <div
             id="reader"
-            style={{
-              width: "100%",
-              height: "400px",
-              display: "inline-block",
-            }}
+            className="w-[100%] h-[400px] inline-block relative"
           ></div>
 
           {/* Pop-up for status */}
           {scanResult && (
-            <div style={styles.popup}>
+            <div className="absolute top-[50%] left-[50%] transform translate-x-[-50%] translate-y-[-50%] bg-white p-6 border border-gray-300 rounded-lg shadow-lg text-center z-1000">
               <h2>Status: {verificationMessage || "Scanning..."}</h2>
-              <button onClick={resetScan} style={styles.button}>
+              <button onClick={resetScan} className="mt-4 px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 bg-[#007bff]">
                 Scan Next
               </button>
-              <button onClick={goBackToConfig} style={{...styles.button, marginLeft: '10px'}}>
+              <button onClick={goBackToConfig} className="mt-4 px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 bg-[#007bff] ml-2">
                 Configure
               </button>
             </div>
@@ -246,94 +238,5 @@ function ScanQr() {
     </div>
   );
 }
-
-// Styles for the components
-const styles = {
-  configContainer: {
-    backgroundColor: "white",
-    padding: "30px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-    maxWidth: "600px",
-    margin: "20px auto",
-    textAlign: "center",
-  },
-  eventSelection: {
-    margin: "20px 0",
-    textAlign: "left",
-  },
-  eventOption: {
-    margin: "10px 0",
-    padding: "10px",
-    border: "1px solid #ddd",
-    borderRadius: "5px",
-    backgroundColor: "#f9f9f9",
-  },
-  eventLabel: {
-    display: "flex",
-    alignItems: "center",
-    cursor: "pointer",
-    fontSize: "16px",
-  },
-  radio: {
-    marginRight: "10px",
-    transform: "scale(1.2)",
-  },
-  eventName: {
-    fontWeight: "bold",
-    marginRight: "10px",
-  },
-  eventCode: {
-    color: "#666",
-    fontSize: "14px",
-  },
-  buttonContainer: {
-    marginTop: "20px",
-  },
-  scannerHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "10px 20px",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "5px",
-    margin: "10px 0",
-  },
-  configButton: {
-    padding: "8px 16px",
-    fontSize: "14px",
-    border: "none",
-    borderRadius: "5px",
-  },
-  errorMessage: {
-    color: "red",
-    marginTop: "10px",
-    padding: "10px",
-    backgroundColor: "#ffe6e6",
-    borderRadius: "5px",
-  },
-  popup: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    backgroundColor: "white",
-    padding: "20px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    zIndex: 1000,
-    textAlign: "center",
-  },
-  button: {
-    padding: "10px 20px",
-    marginTop: "20px",
-    backgroundColor: "#007bff",
-    color: "#fff",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-};
 
 export default ScanQr;

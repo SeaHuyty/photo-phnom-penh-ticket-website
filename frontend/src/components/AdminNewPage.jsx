@@ -5,6 +5,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import QRCode from "qrcode";
 import CryptoJS from "crypto-js";
+import { toast } from 'react-toastify';
 
 // QR Code Security Functions
 const QR_SECRET_KEY = import.meta.env.VITE_QR_SECRET_KEY;
@@ -234,13 +235,13 @@ function AdminNewPage() {
       saveAs(content, fileName);
       
       console.log(`Successfully created ZIP file with ${groupedUser.tickets.length} QR codes for ${groupedUser.name}`);
-      alert(`Successfully downloaded ${groupedUser.tickets.length} QR codes as ZIP file for ${groupedUser.name}!`);
+      toast.success(`Successfully downloaded ${groupedUser.tickets.length} QR codes as ZIP file for ${groupedUser.name}!`);
       
     } catch (error) {
       console.error("Error creating ZIP file:", error);
       
       // Fallback to individual downloads
-      alert(`Creating ZIP failed. Downloading individual QR codes...`);
+      toast.warning(`Creating ZIP failed. Downloading individual QR codes...`);
       for (let i = 0; i < groupedUser.tickets.length; i++) {
         setTimeout(() => {
           handleGenerateQRCode(groupedUser.tickets[i].qrCode);
@@ -291,10 +292,10 @@ function AdminNewPage() {
       setShowCreateModal(false);
       
       const ticketWord = response.data.totalTickets > 1 ? 'tickets' : 'ticket';
-      alert(`Successfully created ${response.data.totalTickets} ${ticketWord} for ${newUser.name}!`);
+      toast.success(`Successfully created ${response.data.totalTickets} ${ticketWord} for ${newUser.name}!`);
     } catch (error) {
       console.error("Error creating user:", error);
-      alert('Error creating user: ' + (error.response?.data?.message || 'Unknown error'));
+      toast.error('Error creating user: ' + (error.response?.data?.message || 'Unknown error'));
     } finally {
       setCreateLoading(false);
     }
