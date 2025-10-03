@@ -223,7 +223,7 @@ function ScanQr() {
 
           {/* Pop-up for status */}
           {scanResult && (
-            <div className="absolute top-[50%] left-[50%] transform translate-x-[-50%] translate-y-[-50%] bg-white p-6 border border-gray-300 rounded-lg shadow-lg text-center z-1000">
+            <div className="absolute top-[50%] left-[50%] transform translate-x-[-50%] translate-y-[-50%] bg-white p-6 border border-gray-300 rounded-lg shadow-lg text-center z-[1000]">
               <h2>Status: {verificationMessage || "Scanning..."}</h2>
               <button onClick={resetScan} className="mt-4 px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 bg-[#007bff]">
                 Scan Next
