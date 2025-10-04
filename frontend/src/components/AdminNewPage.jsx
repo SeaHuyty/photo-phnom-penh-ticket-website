@@ -250,6 +250,43 @@ function AdminNewPage() {
     }
   };
 
+  const handleSendEmail = async (groupedUser) => {
+    try {
+      // Add loading state to prevent multiple clicks
+      const purchaserEmail = groupedUser.purchaserEmail;
+      
+      toast.info(`Sending email to ${purchaserEmail}...`);
+      
+      const response = await axios.post(`${BASE_URL}/admin/send-email`, {
+        purchaserEmail: purchaserEmail
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      
+      if (response.status === 200) {
+        toast.success(`Email sent successfully to ${purchaserEmail} with ${response.data.totalTickets} QR code${response.data.totalTickets > 1 ? 's' : ''}!`);
+      } else if (response.status === 207) {
+        // Partial success
+        toast.warning(`Some emails sent successfully to ${purchaserEmail}. Check console for details.`);
+        console.warn('Partial email success:', response.data);
+      }
+      
+    } catch (error) {
+      console.error('Error sending email:', error);
+      
+      if (error.response?.status === 404) {
+        toast.error('No tickets found for this email address.');
+      } else if (error.response?.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else {
+        const errorMessage = error.response?.data?.message || 'Failed to send email. Please try again.';
+        toast.error(`Email sending failed: ${errorMessage}`);
+      }
+    }
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setCreateLoading(true);
@@ -409,13 +446,22 @@ function AdminNewPage() {
                     </span>
                   </td>
                   <td className="user-actions">
-                    <button
-                      onClick={() => handleDownloadAllQRCodes(groupedUser)}
-                      className="bg-[#007bff] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#0069d9] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
-                      title={groupedUser.totalTickets > 1 ? `Download ${groupedUser.totalTickets} QR codes` : 'Download QR code'}
-                    >
-                      {groupedUser.totalTickets > 1 ? 'Download All' : 'Download QR'}
-                    </button>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => handleDownloadAllQRCodes(groupedUser)}
+                        className="bg-[#007bff] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#0069d9] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
+                        title={groupedUser.totalTickets > 1 ? `Download ${groupedUser.totalTickets} QR codes` : 'Download QR code'}
+                      >
+                        {groupedUser.totalTickets > 1 ? 'Download All' : 'Download QR'}
+                      </button>
+                      <button
+                        onClick={() => handleSendEmail(groupedUser)}
+                        className="bg-[#28a745] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#218838] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
+                        title={`Send ${groupedUser.totalTickets > 1 ? `${groupedUser.totalTickets} QR codes` : 'QR code'} via email to ${groupedUser.email}`}
+                      >
+                        Send Email
+                      </button>
+                    </div>
                     {/* Hidden QR canvases for download generation */}
                     <div style={{display: 'none'}}>
                       {groupedUser.tickets.map((ticket) => (

@@ -91,7 +91,7 @@ function ScanQr() {
 
   // Function to display error sound feedback
   function playErrorBeep() {
-    const beep = new Audio("/errorNotBeep.mp3");
+    const beep = new Audio("/errorBeep.m4a");
     beep.play();
   }
 
