@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 
 function BankQRCode() {
   const [isChecked, setIsChecked] = useState(false);
@@ -14,7 +15,7 @@ function BankQRCode() {
       // Redirect to Thank You page
       navigate("/thank-you");
     } else {
-      alert("Please verify that you have paid for the ticket.");
+      toast.warning("Please verify that you have paid for the ticket.");
     }
   };
 

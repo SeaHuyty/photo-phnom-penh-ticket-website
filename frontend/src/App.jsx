@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
 import EventSelection from "./components/EventSelection";
 import CreateQr from "./components/CreateQr";
 import BankQRCode from "./components/BankQRCode";
@@ -11,6 +12,7 @@ import AdminNewPage from "./components/AdminNewPage";
 import AttendanceCheck from "./components/AttendanceCheck";
 import ProtectedRoute from "./components/ProtectedRoute";
 import './App.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AppContent = () => {
   const location = useLocation();
@@ -72,6 +74,27 @@ const App = () => {
   return (
     <BrowserRouter>
       <AppContent />
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastStyle={{
+          fontFamily: 'inherit',
+          fontSize: '14px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+        }}
+        progressStyle={{
+          background: 'linear-gradient(90deg, #BC2649, #dc3545)'
+        }}
+      />
     </BrowserRouter>
   );
 };

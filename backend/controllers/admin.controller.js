@@ -5,6 +5,7 @@ import Event from '../models/Event.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
+import { sendTicketEmail } from '../utils/emailService.js';
 
 dotenv.config();
 
@@ -122,5 +123,99 @@ export const getAttendanceData = async (req, res) => {
     } catch (err) {
         console.error('Error fetching attendance data:', err);
         res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const sendTicketEmailToUser = async (req, res) => {
+    try {
+        const { purchaserEmail } = req.body;
+        
+        if (!purchaserEmail) {
+            return res.status(400).json({ message: "Purchaser email is required" });
+        }
+        
+        // Find all tickets for this purchaser email
+        const users = await User.findAll({
+            where: { purchaserEmail },
+            include: [{ 
+                model: Event, 
+                as: 'event',
+                attributes: ['id', 'name']
+            }],
+            order: [['ticketNumber', 'ASC']]
+        });
+        
+        if (users.length === 0) {
+            return res.status(404).json({ message: "No tickets found for this email" });
+        }
+        
+        // Group tickets by event (in case user has tickets for multiple events)
+        const ticketsByEvent = {};
+        users.forEach(user => {
+            const eventId = user.eventId;
+            if (!ticketsByEvent[eventId]) {
+                ticketsByEvent[eventId] = {
+                    userInfo: {
+                        name: user.name.replace(/ \(Ticket \d+\)$/, ''), // Remove ticket suffix
+                        email: user.email,
+                        phone: user.phone,
+                        event: user.event
+                    },
+                    tickets: []
+                };
+            }
+            
+            ticketsByEvent[eventId].tickets.push({
+                id: user.id,
+                qrCode: user.qrCode,
+                ticketNumber: user.ticketNumber || 1,
+                used: user.used,
+                scannedAt: user.scannedAt
+            });
+        });
+        
+        // Send emails for each event
+        const emailResults = [];
+        for (const eventId in ticketsByEvent) {
+            const { userInfo, tickets } = ticketsByEvent[eventId];
+            const result = await sendTicketEmail(userInfo, tickets);
+            emailResults.push({
+                event: userInfo.event.name,
+                ticketCount: tickets.length,
+                ...result
+            });
+        }
+        
+        // Check if any emails failed
+        const failedEmails = emailResults.filter(result => !result.success);
+        const successfulEmails = emailResults.filter(result => result.success);
+        
+        if (failedEmails.length > 0 && successfulEmails.length === 0) {
+            return res.status(500).json({ 
+                message: "Failed to send emails",
+                errors: failedEmails.map(result => result.error)
+            });
+        } else if (failedEmails.length > 0) {
+            return res.status(207).json({ // 207 Multi-Status
+                message: "Some emails sent successfully, some failed",
+                successful: successfulEmails,
+                failed: failedEmails
+            });
+        }
+        
+        const totalTickets = emailResults.reduce((sum, result) => sum + result.ticketCount, 0);
+        
+        res.status(200).json({ 
+            message: `Email sent successfully to ${purchaserEmail}`,
+            totalTickets,
+            emailResults: successfulEmails
+        });
+        
+    } catch (err) {
+        console.error('Error sending ticket email:', err);
+        res.status(500).json({ 
+            message: "Internal Server Error",
+            error: err.message 
+        });
     }
 };

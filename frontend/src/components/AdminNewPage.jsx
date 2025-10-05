@@ -5,6 +5,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import QRCode from "qrcode";
 import CryptoJS from "crypto-js";
+import { toast } from 'react-toastify';
 
 // QR Code Security Functions
 const QR_SECRET_KEY = import.meta.env.VITE_QR_SECRET_KEY;
@@ -234,17 +235,54 @@ function AdminNewPage() {
       saveAs(content, fileName);
       
       console.log(`Successfully created ZIP file with ${groupedUser.tickets.length} QR codes for ${groupedUser.name}`);
-      alert(`Successfully downloaded ${groupedUser.tickets.length} QR codes as ZIP file for ${groupedUser.name}!`);
+      toast.success(`Successfully downloaded ${groupedUser.tickets.length} QR codes as ZIP file for ${groupedUser.name}!`);
       
     } catch (error) {
       console.error("Error creating ZIP file:", error);
       
       // Fallback to individual downloads
-      alert(`Creating ZIP failed. Downloading individual QR codes...`);
+      toast.warning(`Creating ZIP failed. Downloading individual QR codes...`);
       for (let i = 0; i < groupedUser.tickets.length; i++) {
         setTimeout(() => {
           handleGenerateQRCode(groupedUser.tickets[i].qrCode);
         }, i * 300); // Stagger downloads
+      }
+    }
+  };
+
+  const handleSendEmail = async (groupedUser) => {
+    try {
+      // Add loading state to prevent multiple clicks
+      const purchaserEmail = groupedUser.purchaserEmail;
+      
+      toast.info(`Sending email to ${purchaserEmail}...`);
+      
+      const response = await axios.post(`${BASE_URL}/admin/send-email`, {
+        purchaserEmail: purchaserEmail
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      
+      if (response.status === 200) {
+        toast.success(`Email sent successfully to ${purchaserEmail} with ${response.data.totalTickets} QR code${response.data.totalTickets > 1 ? 's' : ''}!`);
+      } else if (response.status === 207) {
+        // Partial success
+        toast.warning(`Some emails sent successfully to ${purchaserEmail}. Check console for details.`);
+        console.warn('Partial email success:', response.data);
+      }
+      
+    } catch (error) {
+      console.error('Error sending email:', error);
+      
+      if (error.response?.status === 404) {
+        toast.error('No tickets found for this email address.');
+      } else if (error.response?.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else {
+        const errorMessage = error.response?.data?.message || 'Failed to send email. Please try again.';
+        toast.error(`Email sending failed: ${errorMessage}`);
       }
     }
   };
@@ -291,10 +329,10 @@ function AdminNewPage() {
       setShowCreateModal(false);
       
       const ticketWord = response.data.totalTickets > 1 ? 'tickets' : 'ticket';
-      alert(`Successfully created ${response.data.totalTickets} ${ticketWord} for ${newUser.name}!`);
+      toast.success(`Successfully created ${response.data.totalTickets} ${ticketWord} for ${newUser.name}!`);
     } catch (error) {
       console.error("Error creating user:", error);
-      alert('Error creating user: ' + (error.response?.data?.message || 'Unknown error'));
+      toast.error('Error creating user: ' + (error.response?.data?.message || 'Unknown error'));
     } finally {
       setCreateLoading(false);
     }
@@ -408,13 +446,22 @@ function AdminNewPage() {
                     </span>
                   </td>
                   <td className="user-actions">
-                    <button
-                      onClick={() => handleDownloadAllQRCodes(groupedUser)}
-                      className="bg-[#007bff] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#0069d9] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
-                      title={groupedUser.totalTickets > 1 ? `Download ${groupedUser.totalTickets} QR codes` : 'Download QR code'}
-                    >
-                      {groupedUser.totalTickets > 1 ? 'Download All' : 'Download QR'}
-                    </button>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => handleDownloadAllQRCodes(groupedUser)}
+                        className="bg-[#007bff] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#0069d9] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
+                        title={groupedUser.totalTickets > 1 ? `Download ${groupedUser.totalTickets} QR codes` : 'Download QR code'}
+                      >
+                        {groupedUser.totalTickets > 1 ? 'Download All' : 'Download QR'}
+                      </button>
+                      <button
+                        onClick={() => handleSendEmail(groupedUser)}
+                        className="bg-[#28a745] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#218838] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
+                        title={`Send ${groupedUser.totalTickets > 1 ? `${groupedUser.totalTickets} QR codes` : 'QR code'} via email to ${groupedUser.email}`}
+                      >
+                        Send Email
+                      </button>
+                    </div>
                     {/* Hidden QR canvases for download generation */}
                     <div style={{display: 'none'}}>
                       {groupedUser.tickets.map((ticket) => (
