@@ -128,15 +128,22 @@ export const getAttendanceData = async (req, res) => {
 
 export const sendTicketEmailToUser = async (req, res) => {
     try {
-        const { purchaserEmail } = req.body;
+        const { purchaserEmail, purchaseDate } = req.body;
         
         if (!purchaserEmail) {
             return res.status(400).json({ message: "Purchaser email is required" });
         }
         
-        // Find all tickets for this purchaser email
+        if (!purchaseDate) {
+            return res.status(400).json({ message: "Purchase date is required" });
+        }
+        
+        // Find all tickets for this specific purchase (same email and same createdAt timestamp)
         const users = await User.findAll({
-            where: { purchaserEmail },
+            where: { 
+                purchaserEmail,
+                createdAt: new Date(purchaseDate)
+            },
             include: [{ 
                 model: Event, 
                 as: 'event',
@@ -146,7 +153,16 @@ export const sendTicketEmailToUser = async (req, res) => {
         });
         
         if (users.length === 0) {
-            return res.status(404).json({ message: "No tickets found for this email" });
+            return res.status(404).json({ message: "No tickets found for this purchase" });
+        }
+        
+        // Check if email has already been sent for any of these tickets
+        const emailAlreadySent = users.some(user => user.emailSent);
+        if (emailAlreadySent) {
+            return res.status(400).json({ 
+                message: "Email has already been sent to this user",
+                alreadySent: true
+            });
         }
         
         // Group tickets by event (in case user has tickets for multiple events)
@@ -201,6 +217,22 @@ export const sendTicketEmailToUser = async (req, res) => {
                 successful: successfulEmails,
                 failed: failedEmails
             });
+        }
+        
+        // Mark all tickets as email sent if all emails were successful
+        if (successfulEmails.length > 0 && failedEmails.length === 0) {
+            await User.update(
+                { 
+                    emailSent: true,
+                    emailSentAt: new Date()
+                },
+                { 
+                    where: { 
+                        purchaserEmail,
+                        createdAt: new Date(purchaseDate)
+                    }
+                }
+            );
         }
         
         const totalTickets = emailResults.reduce((sum, result) => sum + result.ticketCount, 0);

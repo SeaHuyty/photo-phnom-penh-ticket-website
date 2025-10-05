@@ -13,6 +13,7 @@ const decodeHashedQR = (hashedData) => {
 function ScanQr() {
   const [scanResult, setScanResult] = useState(null);
   const [verificationMessage, setVerificationMessage] = useState(null);
+  const [userInfo, setUserInfo] = useState(null); // Store user info from successful scan
   const [isScanning, setIsScanning] = useState(false); // Start with scanning disabled
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(localStorage.getItem('selectedEventId') || '');
@@ -118,6 +119,7 @@ function ScanQr() {
     setIsConfiguring(true);
     setScanResult(null);
     setVerificationMessage(null);
+    setUserInfo(null); // Clear user info
   }
 
   // In ScanQr.jsx, send the hashed QR code content to the server
@@ -132,6 +134,11 @@ function ScanQr() {
           selectedEventId: selectedEventId // Include selected event for validation
         });
         setVerificationMessage(response.data.message);
+        
+        // Store user info if scan was successful
+        if (response.data.user) {
+          setUserInfo(response.data.user);
+        }
 
         if (response.data.message === "QR Code already used" || response.data.message.includes("Wrong event")) {
             playErrorBeep();
@@ -140,6 +147,7 @@ function ScanQr() {
         }
     } catch (error) {
         setVerificationMessage(error.response?.data?.message || "Verification failed");
+        setUserInfo(null); // Clear user info on error
         playErrorBeep();
     }
   }
@@ -148,6 +156,7 @@ function ScanQr() {
   function resetScan() {
     setScanResult(null);
     setVerificationMessage(null);
+    setUserInfo(null); // Clear user info
     
     // Clear the scanner div content before restarting
     const readerElement = document.getElementById("reader");
@@ -223,14 +232,40 @@ function ScanQr() {
 
           {/* Pop-up for status */}
           {scanResult && (
-            <div className="absolute top-[50%] left-[50%] transform translate-x-[-50%] translate-y-[-50%] bg-white p-6 border border-gray-300 rounded-lg shadow-lg text-center z-[1000]">
-              <h2>Status: {verificationMessage || "Scanning..."}</h2>
-              <button onClick={resetScan} className="mt-4 px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 bg-[#007bff]">
-                Scan Next
-              </button>
-              <button onClick={goBackToConfig} className="mt-4 px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 bg-[#007bff] ml-2">
-                Configure
-              </button>
+            <div className="absolute top-[50%] left-[50%] transform translate-x-[-50%] translate-y-[-50%] bg-white p-6 border border-gray-300 rounded-lg shadow-lg text-center z-[1000] max-w-[400px]">
+              <h2 className="text-lg font-semibold mb-3">Status: {verificationMessage || "Scanning..."}</h2>
+              
+              {/* Display user information if scan was successful */}
+              {userInfo && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-left">
+                  <h3 className="font-semibold text-green-800 mb-2">Ticket Information:</h3>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Name: </span>
+                      <span className="text-gray-900">{userInfo.name}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Event: </span>
+                      <span className="text-gray-900">{userInfo.event}</span>
+                    </div>
+                    {userInfo.other && (
+                      <div>
+                        <span className="font-medium text-gray-700">Other Info: </span>
+                        <span className="text-gray-900">{userInfo.other}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-2 justify-center">
+                <button onClick={resetScan} className="px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 bg-[#007bff]">
+                  Scan Next
+                </button>
+                <button onClick={goBackToConfig} className="px-6 py-2 rounded-lg text-white font-medium cursor-pointer hover:opacity-80 bg-[#6c757d]">
+                  Configure
+                </button>
+              </div>
             </div>
           )}
         </div>

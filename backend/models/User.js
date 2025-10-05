@@ -49,6 +49,24 @@ const User = sequelize.define('User', {
   scannedAt: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  emailSent: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  emailSentAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  other: {
+    type: DataTypes.STRING(150),
+    allowNull: true
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'users',

@@ -37,7 +37,8 @@ function AdminNewPage() {
     email: '',
     phone: '',
     eventId: '',
-    quantity: 1
+    quantity: 1,
+    other: ''
   });
   const [createLoading, setCreateLoading] = useState(false);
 
@@ -102,19 +103,32 @@ function AdminNewPage() {
     const grouped = {};
     
     usersData.forEach(user => {
-      const key = user.purchaserEmail || user.email;
+      // Group by purchaser email + createdAt to separate different purchase sessions
+      const purchaseDate = user.createdAt ? new Date(user.createdAt).toISOString() : 'unknown';
+      const key = `${user.purchaserEmail || user.email}-${purchaseDate}`;
       
       if (!grouped[key]) {
         grouped[key] = {
-          purchaserEmail: key,
+          purchaserEmail: user.purchaserEmail || user.email,
+          purchaseDate: user.createdAt,
           name: user.name.replace(/ \(Ticket \d+\)$/, ''), // Remove ticket suffix
           email: user.email,
           phone: user.phone,
           event: user.event,
           eventId: user.eventId,
           tickets: [],
-          totalTickets: 0
+          totalTickets: 0,
+          emailSent: user.emailSent || false,
+          emailSentAt: user.emailSentAt || null
         };
+      }
+      
+      // Update email status if any ticket has email sent
+      if (user.emailSent) {
+        grouped[key].emailSent = true;
+        if (user.emailSentAt && (!grouped[key].emailSentAt || new Date(user.emailSentAt) > new Date(grouped[key].emailSentAt))) {
+          grouped[key].emailSentAt = user.emailSentAt;
+        }
       }
       
       grouped[key].tickets.push({
@@ -122,7 +136,9 @@ function AdminNewPage() {
         qrCode: user.qrCode,
         ticketNumber: user.ticketNumber || 1,
         used: user.used,
-        scannedAt: user.scannedAt
+        scannedAt: user.scannedAt,
+        emailSent: user.emailSent || false,
+        emailSentAt: user.emailSentAt || null
       });
       grouped[key].totalTickets++;
     });
@@ -134,14 +150,14 @@ function AdminNewPage() {
     setSelectedEvent(eventId);
   };
 
-  const handleGenerateQRCode = async (userQrCode) => {
+  const handleGenerateQRCode = async (userQrCode, userName, userId) => {
     try {
       const canvas = document.getElementById(`qrCanvas-${userQrCode}`);
       if (canvas) {
         const imageUrl = canvas.toDataURL("image/png");
         const link = document.createElement("a");
         link.href = imageUrl;
-        link.download = `qrCode-${userQrCode}.png`;
+        link.download = `${userName}-${userId}.png`;
         link.click();
       }
     } catch (error) {
@@ -153,7 +169,7 @@ function AdminNewPage() {
     try {
       if (groupedUser.tickets.length === 1) {
         // Single ticket - use existing download
-        handleGenerateQRCode(groupedUser.tickets[0].qrCode);
+        handleGenerateQRCode(groupedUser.tickets[0].qrCode, groupedUser.name, groupedUser.tickets[0].id);
         return;
       }
 
@@ -258,7 +274,8 @@ function AdminNewPage() {
       toast.info(`Sending email to ${purchaserEmail}...`);
       
       const response = await axios.post(`${BASE_URL}/admin/send-email`, {
-        purchaserEmail: purchaserEmail
+        purchaserEmail: purchaserEmail,
+        purchaseDate: groupedUser.purchaseDate
       }, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
@@ -267,6 +284,21 @@ function AdminNewPage() {
       
       if (response.status === 200) {
         toast.success(`Email sent successfully to ${purchaserEmail} with ${response.data.totalTickets} QR code${response.data.totalTickets > 1 ? 's' : ''}!`);
+        
+        // Refresh data to update email status
+        const [usersResponse, eventsResponse] = await Promise.all([
+          axios.get(`${BASE_URL}/users`),
+          axios.get(`${BASE_URL}/events`)
+        ]);
+        
+        const userData = usersResponse.data;
+        setUsers(userData);
+        setFilteredUsers(userData);
+        
+        // Update grouped users
+        const grouped = groupUsersByPurchaser(userData);
+        setGroupedUsers(grouped);
+        
       } else if (response.status === 207) {
         // Partial success
         toast.warning(`Some emails sent successfully to ${purchaserEmail}. Check console for details.`);
@@ -276,7 +308,9 @@ function AdminNewPage() {
     } catch (error) {
       console.error('Error sending email:', error);
       
-      if (error.response?.status === 404) {
+      if (error.response?.status === 400 && error.response?.data?.alreadySent) {
+        toast.warning('Email has already been sent to this user.');
+      } else if (error.response?.status === 404) {
         toast.error('No tickets found for this email address.');
       } else if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
@@ -297,7 +331,8 @@ function AdminNewPage() {
         email: newUser.email,
         phone: newUser.phone,
         eventId: parseInt(newUser.eventId),
-        quantity: parseInt(newUser.quantity)
+        quantity: parseInt(newUser.quantity),
+        other: newUser.other
       });
       
       // Refresh users data
@@ -348,7 +383,7 @@ function AdminNewPage() {
 
   const handleCloseModal = () => {
     setShowCreateModal(false);
-    setNewUser({ name: '', email: '', phone: '', eventId: '', quantity: 1 });
+    setNewUser({ name: '', email: '', phone: '', eventId: '', quantity: 1, other: '' });
   };
 
   if (loading) {
@@ -429,12 +464,13 @@ function AdminNewPage() {
                 <th>Phone</th>
                 <th>Event</th>
                 <th>Tickets</th>
+                <th>Email Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {groupedUsers.map((groupedUser, index) => (
-                <tr key={groupedUser.purchaserEmail}>
+                <tr key={`${groupedUser.purchaserEmail}-${groupedUser.purchaseDate}`}>
                   <td className="text-center text-[#7f8c8d] w-[60px] text-medium">{index + 1}</td>
                   <td className="text-xs text-[#2c3e50] text-medium">{groupedUser.name}</td>
                   <td className="text-[#5a6c7d] text-xs user-email">{groupedUser.email}</td>
@@ -444,6 +480,24 @@ function AdminNewPage() {
                     <span className="inline-block bg-[#e7f3ff] text-[#0066cc] px-2 py-1 rounded-lg text-sm font-medium border-1 border-[#b3d9ff]">
                       {groupedUser.totalTickets} {groupedUser.totalTickets === 1 ? 'ticket' : 'tickets'}
                     </span>
+                  </td>
+                  <td className="text-center">
+                    {groupedUser.emailSent ? (
+                      <div className="flex flex-col items-center">
+                        <span className="inline-block bg-[#d4edda] text-[#155724] px-2 py-1 rounded-lg text-xs font-medium border-1 border-[#c3e6cb]">
+                          ✅ Sent
+                        </span>
+                        {groupedUser.emailSentAt && (
+                          <span className="text-xs text-gray-500 mt-1">
+                            {new Date(groupedUser.emailSentAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="inline-block bg-[#fff3cd] text-[#856404] px-2 py-1 rounded-lg text-xs font-medium border-1 border-[#ffeaa7]">
+                        📧 Not Sent
+                      </span>
+                    )}
                   </td>
                   <td className="user-actions">
                     <div className="flex gap-2 justify-center">
@@ -456,10 +510,19 @@ function AdminNewPage() {
                       </button>
                       <button
                         onClick={() => handleSendEmail(groupedUser)}
-                        className="bg-[#28a745] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#218838] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
-                        title={`Send ${groupedUser.totalTickets > 1 ? `${groupedUser.totalTickets} QR codes` : 'QR code'} via email to ${groupedUser.email}`}
+                        disabled={groupedUser.emailSent}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 shadow-md ${
+                          groupedUser.emailSent 
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-60' 
+                            : 'bg-[#28a745] text-white hover:bg-[#218838] cursor-pointer hover:shadow-lg'
+                        }`}
+                        title={
+                          groupedUser.emailSent 
+                            ? 'Email already sent' 
+                            : `Send ${groupedUser.totalTickets > 1 ? `${groupedUser.totalTickets} QR codes` : 'QR code'} via email to ${groupedUser.email}`
+                        }
                       >
-                        Send Email
+                        {groupedUser.emailSent ? '📧 Email Sent' : '📧 Send Email'}
                       </button>
                     </div>
                     {/* Hidden QR canvases for download generation */}
@@ -485,7 +548,7 @@ function AdminNewPage() {
       {/* Create User Modal */}
       {showCreateModal && (
         <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex justify-center items-center z-1000 modal-overlay">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px] max-h-[90vh] overflow-y-hidden shadow-xl">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[500px] max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
               <h2 className="text-[#333333]">Create New User</h2>
               <button 
@@ -581,6 +644,23 @@ function AdminNewPage() {
                 </select>
                 <small className="block mt-2 text-xs text-gray-500 italic">
                   All tickets will have the same contact information but unique QR codes
+                </small>
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="other" className="block text-1xl font-semibold text-gray-700 mb-1">Other Information</label>
+                <input
+                  type="text"
+                  id="other"
+                  name="other"
+                  value={newUser.other}
+                  onChange={handleInputChange}
+                  placeholder="Additional information (optional)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  maxLength={150}
+                />
+                <small className="block mt-1 text-xs text-gray-500">
+                  Optional field for any additional information (max 150 characters)
                 </small>
               </div>
 
