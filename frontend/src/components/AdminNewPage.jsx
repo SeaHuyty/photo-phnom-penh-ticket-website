@@ -9,7 +9,6 @@ import { toast } from 'react-toastify';
 
 // QR Code Security Functions
 const QR_SECRET_KEY = import.meta.env.VITE_QR_SECRET_KEY;
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const hashQRData = (originalData) => {
@@ -29,9 +28,12 @@ function AdminNewPage() {
   const [groupedUsers, setGroupedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState("all");
+  const [selectedEmailStatus, setSelectedEmailStatus] = useState("all");
   const [eventsMap, setEventsMap] = useState({});
   const [events, setEvents] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
+  const [selectedUserGroup, setSelectedUserGroup] = useState(null);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -88,16 +90,28 @@ function AdminNewPage() {
   useEffect(() => {
     let filtered = users;
     
+    // Filter by event
     if (selectedEvent !== "all") {
-      filtered = users.filter(user => String(user.eventId) === String(selectedEvent));
+      filtered = filtered.filter(user => String(user.eventId) === String(selectedEvent));
     }
     
     setFilteredUsers(filtered);
     
-    // Update grouped users based on filtered data
+    // Group users first
     const grouped = groupUsersByPurchaser(filtered);
-    setGroupedUsers(grouped);
-  }, [selectedEvent, users]);
+    
+    // Then filter grouped users by email status
+    let filteredGrouped = grouped;
+    if (selectedEmailStatus !== "all") {
+      if (selectedEmailStatus === "sent") {
+        filteredGrouped = grouped.filter(group => group.emailSent);
+      } else if (selectedEmailStatus === "not-sent") {
+        filteredGrouped = grouped.filter(group => !group.emailSent);
+      }
+    }
+    
+    setGroupedUsers(filteredGrouped);
+  }, [selectedEvent, selectedEmailStatus, users]);
 
   const groupUsersByPurchaser = (usersData) => {
     const grouped = {};
@@ -138,7 +152,8 @@ function AdminNewPage() {
         used: user.used,
         scannedAt: user.scannedAt,
         emailSent: user.emailSent || false,
-        emailSentAt: user.emailSentAt || null
+        emailSentAt: user.emailSentAt || null,
+        other: user.other
       });
       grouped[key].totalTickets++;
     });
@@ -148,6 +163,10 @@ function AdminNewPage() {
 
   const handleEventFilter = (eventId) => {
     setSelectedEvent(eventId);
+  };
+
+  const handleEmailStatusFilter = (status) => {
+    setSelectedEmailStatus(status);
   };
 
   const handleGenerateQRCode = async (userQrCode, userName, userId) => {
@@ -386,6 +405,16 @@ function AdminNewPage() {
     setNewUser({ name: '', email: '', phone: '', eventId: '', quantity: 1, other: '' });
   };
 
+  const handleShowUserDetails = (groupedUser) => {
+    setSelectedUserGroup(groupedUser);
+    setShowUserDetailsModal(true);
+  };
+
+  const handleCloseUserDetails = () => {
+    setShowUserDetailsModal(false);
+    setSelectedUserGroup(null);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-4 h-[100vh] text-[#7f8c8d]">
@@ -418,32 +447,51 @@ function AdminNewPage() {
       </div>
 
       <div className="bg-[#f8f9fa] p-4 rounded mb-6 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <label htmlFor="event-filter" className="text-[#2c3e50] text-semibold text-sm">Filter by Event:</label>
-          <select 
-            id="event-filter"
-            value={selectedEvent} 
-            onChange={(e) => handleEventFilter(e.target.value)}
-            className="px-3 py-2 border-1 border-gray-300 rounded-lg text-[#2c3e50] text-sm min-w-[200px] focus:outline-none focus:ring-1 focus:ring-[#BC2649] hover:border-[#BC2649] transition-all duration-200"
-          >
-            <option value="all">All Events</option>
-            {uniqueEvents.map((eventId) => (
-              <option key={eventId} value={String(eventId)}>
-                {eventsMap[eventId] || 'Unknown Event'}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <label htmlFor="event-filter" className="text-[#2c3e50] text-semibold text-sm">Filter by Event:</label>
+            <select 
+              id="event-filter"
+              value={selectedEvent} 
+              onChange={(e) => handleEventFilter(e.target.value)}
+              className="px-3 py-2 border-1 border-gray-300 rounded-lg text-[#2c3e50] text-sm min-w-[200px] focus:outline-none focus:ring-1 focus:ring-[#BC2649] hover:border-[#BC2649] transition-all duration-200"
+            >
+              <option value="all">All Events</option>
+              {uniqueEvents.map((eventId) => (
+                <option key={eventId} value={String(eventId)}>
+                  {eventsMap[eventId] || 'Unknown Event'}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <label htmlFor="email-status-filter" className="text-[#2c3e50] text-semibold text-sm">Email Status:</label>
+            <select 
+              id="email-status-filter"
+              value={selectedEmailStatus} 
+              onChange={(e) => handleEmailStatusFilter(e.target.value)}
+              className="px-3 py-2 border-1 border-gray-300 rounded-lg text-[#2c3e50] text-sm min-w-[150px] focus:outline-none focus:ring-1 focus:ring-[#BC2649] hover:border-[#BC2649] transition-all duration-200"
+            >
+              <option value="all">All Status</option>
+              <option value="sent">Email Sent</option>
+              <option value="not-sent">Not Sent</option>
+            </select>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
           <span className="text-[#7f8c8d] text-sm">Showing:</span>
           <span className="bg-[#BC2649] text-white px-2 py-1 rounded-lg text-sm text-medium">{groupedUsers.length} purchasers ({filteredUsers.length} total tickets)</span>
-          {selectedEvent !== "all" && (
+          {(selectedEvent !== "all" || selectedEmailStatus !== "all") && (
             <button 
-              onClick={() => handleEventFilter("all")} 
+              onClick={() => {
+                handleEventFilter("all");
+                handleEmailStatusFilter("all");
+              }} 
               className="bg-[#e74c3c] text-white border-none rounded-lg cursor-pointer text-sm px-2 py-1 hover:bg-[#c0392b] transition-all duration-200 transform hover:scale-103"
             >
-              Clear Filter ✕
+              Clear All Filters ✕
             </button>
           )}
         </div>
@@ -476,53 +524,32 @@ function AdminNewPage() {
                   <td className="text-[#5a6c7d] text-xs user-email">{groupedUser.email}</td>
                   <td className="user-phone">{groupedUser.phone}</td>
                   <td className="text-left">{groupedUser.event?.name || 'Unknown Event'}</td>
-                  <td>
+                  <td className="text-center">
                     <span className="inline-block bg-[#e7f3ff] text-[#0066cc] px-2 py-1 rounded-lg text-sm font-medium border-1 border-[#b3d9ff]">
-                      {groupedUser.totalTickets} {groupedUser.totalTickets === 1 ? 'ticket' : 'tickets'}
+                      {groupedUser.totalTickets}
                     </span>
                   </td>
                   <td className="text-center">
                     {groupedUser.emailSent ? (
                       <div className="flex flex-col items-center">
                         <span className="inline-block bg-[#d4edda] text-[#155724] px-2 py-1 rounded-lg text-xs font-medium border-1 border-[#c3e6cb]">
-                          ✅ Sent
+                          Sent
                         </span>
-                        {groupedUser.emailSentAt && (
-                          <span className="text-xs text-gray-500 mt-1">
-                            {new Date(groupedUser.emailSentAt).toLocaleDateString()}
-                          </span>
-                        )}
                       </div>
                     ) : (
                       <span className="inline-block bg-[#fff3cd] text-[#856404] px-2 py-1 rounded-lg text-xs font-medium border-1 border-[#ffeaa7]">
-                        📧 Not Sent
+                        Not Sent
                       </span>
                     )}
                   </td>
                   <td className="user-actions">
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex justify-center">
                       <button
-                        onClick={() => handleDownloadAllQRCodes(groupedUser)}
-                        className="bg-[#007bff] text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-[#0069d9] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
-                        title={groupedUser.totalTickets > 1 ? `Download ${groupedUser.totalTickets} QR codes` : 'Download QR code'}
+                        onClick={() => handleShowUserDetails(groupedUser)}
+                        className="bg-green-600 text-white px-[5px] py-1 rounded-lg text-xs font-medium hover:bg-green-700 transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
+                        title="View ticket details and actions"
                       >
-                        {groupedUser.totalTickets > 1 ? 'Download All' : 'Download QR'}
-                      </button>
-                      <button
-                        onClick={() => handleSendEmail(groupedUser)}
-                        disabled={groupedUser.emailSent}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 shadow-md ${
-                          groupedUser.emailSent 
-                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-60' 
-                            : 'bg-[#28a745] text-white hover:bg-[#218838] cursor-pointer hover:shadow-lg'
-                        }`}
-                        title={
-                          groupedUser.emailSent 
-                            ? 'Email already sent' 
-                            : `Send ${groupedUser.totalTickets > 1 ? `${groupedUser.totalTickets} QR codes` : 'QR code'} via email to ${groupedUser.email}`
-                        }
-                      >
-                        {groupedUser.emailSent ? '📧 Email Sent' : '📧 Send Email'}
+                        View Details
                       </button>
                     </div>
                     {/* Hidden QR canvases for download generation */}
@@ -682,6 +709,185 @@ function AdminNewPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {showUserDetailsModal && selectedUserGroup && (
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex justify-center items-center z-1000 modal-overlay">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-[600px] max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-[#333333]">Ticket Details</h2>
+              <button 
+                className="bg-none border-none text-2xl cursor-pointer text-gray-600 hover:text-gray-900 w-8 h-8 flex items-center justify-center"
+                onClick={handleCloseUserDetails}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Basic Information */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium text-gray-700">Name:</span>
+                    <p className="text-gray-900">{selectedUserGroup.name}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Email:</span>
+                    <p className="text-gray-900">{selectedUserGroup.email}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Phone:</span>
+                    <p className="text-gray-900">{selectedUserGroup.phone}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Event:</span>
+                    <p className="text-gray-900">{selectedUserGroup.event?.name || 'Unknown Event'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ticket Information */}
+              <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">Ticket Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium text-gray-700">Total Tickets:</span>
+                    <p className="text-gray-900">{selectedUserGroup.totalTickets}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Purchase Date:</span>
+                    <p className="text-gray-900">
+                      {selectedUserGroup.purchaseDate ? (
+                        <div>
+                          <div>{new Date(selectedUserGroup.purchaseDate).toLocaleDateString()}</div>
+                          <div className="text-sm text-gray-600">
+                            {new Date(selectedUserGroup.purchaseDate).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      ) : (
+                        'Unknown'
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scan Status */}
+              <div className="bg-yellow-50 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-yellow-800 mb-3">Scan Status</h3>
+                <div className="space-y-2">
+                  {selectedUserGroup.tickets.map((ticket, index) => (
+                    <div key={ticket.id} className="flex justify-between items-center p-2 bg-white rounded border">
+                      <span className="font-medium">Ticket #{ticket.ticketNumber}:</span>
+                      <div className="text-right">
+                        {ticket.used ? (
+                          <div>
+                            <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
+                              Scanned
+                            </span>
+                            {ticket.scannedAt && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                {new Date(ticket.scannedAt).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-medium">
+                            Not Scanned
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Email Status */}
+              <div className="bg-green-50 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-green-800 mb-3">Email Status</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium text-gray-700">Email Sent:</span>
+                    <p className="text-gray-900">
+                      {selectedUserGroup.emailSent ? (
+                        <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">
+                          No
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  {selectedUserGroup.emailSentAt && (
+                    <div>
+                      <span className="font-medium text-gray-700">Sent Time:</span>
+                      <p className="text-gray-900">
+                        <div>{new Date(selectedUserGroup.emailSentAt).toLocaleDateString()}</div>
+                        <div className="text-sm text-gray-600">
+                          {new Date(selectedUserGroup.emailSentAt).toLocaleTimeString()}
+                        </div>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              {selectedUserGroup.tickets.some(ticket => ticket.other) && (
+                <div className="bg-purple-50 rounded-lg p-4 mb-6">
+                  <h3 className="text-lg font-semibold text-purple-800 mb-3">Additional Information</h3>
+                  {selectedUserGroup.tickets.map((ticket, index) => (
+                    ticket.other && (
+                      <div key={ticket.id} className="mb-2">
+                        <span className="font-medium text-gray-700">Ticket #{ticket.ticketNumber}:</span>
+                        <p className="text-gray-900 bg-white p-2 rounded border">{ticket.other}</p>
+                      </div>
+                    )
+                  ))}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 justify-center pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    handleDownloadAllQRCodes(selectedUserGroup);
+                    handleCloseUserDetails();
+                  }}
+                  className="bg-[#007bff] text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-[#0069d9] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg flex items-center gap-2"
+                  title={selectedUserGroup.totalTickets > 1 ? `Download ${selectedUserGroup.totalTickets} QR codes` : 'Download QR code'}
+                >
+                  {selectedUserGroup.totalTickets > 1 ? 'Download All QR Codes' : 'Download QR Code'}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleSendEmail(selectedUserGroup);
+                    handleCloseUserDetails();
+                  }}
+                  disabled={selectedUserGroup.emailSent}
+                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 shadow-md flex items-center gap-2 ${
+                    selectedUserGroup.emailSent 
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-60' 
+                      : 'bg-[#28a745] text-white hover:bg-[#218838] cursor-pointer hover:shadow-lg'
+                  }`}
+                  title={
+                    selectedUserGroup.emailSent 
+                      ? 'Email already sent' 
+                      : `Send ${selectedUserGroup.totalTickets > 1 ? `${selectedUserGroup.totalTickets} QR codes` : 'QR code'} via email`
+                  }
+                >
+                  {selectedUserGroup.emailSent ? 'Email Already Sent' : 'Send Email'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
