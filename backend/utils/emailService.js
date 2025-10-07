@@ -136,7 +136,7 @@ export const sendTicketEmail = async (userInfo, tickets) => {
         ` : `
         <div style="margin-bottom: 20px;">
           <h4 style="color: #333;">Your Ticket:</h4>
-          <p style="color: #666;">Ticket ID: ${tickets[0].id} - ${tickets[0].qrCode}</p>
+          <p style="color: #666;">Ticket ID: ${tickets[0].id}</p>
         </div>
         `}
         

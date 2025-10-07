@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS users (
     ticketNumber INTEGER NOT NULL DEFAULT 1,
     purchaserEmail VARCHAR(100) NOT NULL,
     scannedAt TIMESTAMP NULL,
+    emailSent BOOLEAN NOT NULL DEFAULT FALSE,
+    emailSentAt TIMESTAMP NULL,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    other VARCHAR(150),
     FOREIGN KEY (eventId) REFERENCES event (id)
 );
 

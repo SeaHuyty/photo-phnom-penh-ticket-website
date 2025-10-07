@@ -13,8 +13,9 @@ dotenv.config();
 
 const app = express();
 
+const clientUrl = process.env.CLIENT_URL;
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: clientUrl,
     credentials: true
 }));
 

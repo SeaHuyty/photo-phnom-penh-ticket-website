@@ -21,7 +21,7 @@ const hashQRData = (originalData) => {
 };
 
 export const registerUser = async (req, res) => {
-    const { name, email, phone, eventId, quantity = 1 } = req.body;
+    const { name, email, phone, eventId, quantity = 1, other } = req.body;
 
     if (!name || !email || !phone || !eventId) {
         return res.status(400).json({ message: "All fields are required" });
@@ -59,6 +59,7 @@ export const registerUser = async (req, res) => {
 
         const createdTickets = [];
         const usedIdsSet = new Set(usedIds); // Convert to Set for faster lookup
+        const purchaseTimestamp = new Date(); // Same timestamp for all tickets in this purchase
         
         // Generate random IDs and check for duplicates
         const generateRandomId = () => {
@@ -86,7 +87,9 @@ export const registerUser = async (req, res) => {
                 qrCode,
                 ticketNumber: i + 1,
                 purchaserEmail: email,
-                scannedAt: null
+                scannedAt: null,
+                other: other || null,
+                createdAt: purchaseTimestamp
             }, { transaction });
             
             createdTickets.push({
@@ -171,7 +174,8 @@ export const verifyQrCode = async (req, res) => {
             message: "✅ QR Code verified successfully",
             user: {
                 name: user.name,
-                event: user.event.name
+                event: user.event.name,
+                other: user.other
             }
         });
     } catch (err) {
